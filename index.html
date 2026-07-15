@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Ledger — Tuition ERP</title>
+<title>Shree Classes — Tuition ERP</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -192,13 +192,49 @@
   .pick-sub{ font-size:11px; color:var(--text-soft); margin-top:1px; }
   .pick-list{ max-height:320px; overflow-y:auto; border:1px solid var(--rule); border-radius:8px; padding:2px 10px; margin-top:8px; }
   .pick-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  /* ---------- MOBILE ---------- */
+  .hamburger{ display:none; background:none; border:none; cursor:pointer; padding:6px; margin-right:10px; flex:none; }
+  .hamburger span{ display:block; width:22px; height:2px; background:var(--text); margin:5px 0; border-radius:2px; }
+  .sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:149; }
+  .sidebar-overlay.open{ display:block; }
+
+  @media (max-width: 860px){
+    #app{ display:block; }
+    .hamburger{ display:inline-block; }
+    .sidebar{
+      position:fixed; left:0; top:0; z-index:150; width:250px;
+      transform:translateX(-100%); transition:transform .22s ease; box-shadow:0 0 40px rgba(0,0,0,0.3);
+    }
+    .sidebar.open{ transform:translateX(0); }
+    .main{ width:100%; }
+    .topbar{ padding:18px 16px 14px; flex-wrap:wrap; gap:10px; align-items:center; }
+    .topbar > div:first-child{ display:flex; align-items:center; }
+    .page-title{ font-size:21px; }
+    .today{ width:100%; text-align:left; order:3; }
+    .content{ padding:16px 14px 40px; }
+    .stat-grid{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .field-row{ grid-template-columns:1fr; gap:0; }
+    .tt-grid{ grid-template-columns:1fr 1fr; }
+    .panel-body{ overflow-x:auto; }
+    table.ledger{ min-width:560px; }
+    .modal-overlay{ padding:16px; }
+    .modal{ max-width:100%; }
+    .login-card{ max-width:100%; }
+  }
+  @media (max-width: 480px){
+    .stat-grid{ grid-template-columns:1fr; }
+    .tt-grid{ grid-template-columns:1fr; }
+    .page-title{ font-size:19px; }
+    .att-controls{ flex-direction:column; align-items:stretch; }
+  }
 </style>
 </head>
 <body>
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-head">
-      <div class="login-mark">Ledger</div>
+      <div class="login-mark">Shree Classes</div>
       <div class="login-sub">Tuition ERP</div>
     </div>
     <div class="login-tabs">
@@ -217,9 +253,10 @@
 </div>
 
 <div id="app" style="display:none;">
-  <nav class="sidebar">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebarNav">
     <div class="brand">
-      <div class="brand-mark">Ledger</div>
+      <div class="brand-mark">Shree Classes</div>
       <div class="brand-sub">Tuition ERP</div>
     </div>
     <ul class="nav" id="navList"></ul>
@@ -232,8 +269,11 @@
   <div class="main">
     <div class="topbar">
       <div>
-        <div class="page-title" id="pageTitle">Dashboard</div>
-        <div class="page-sub" id="pageSub">Overview of the institute</div>
+        <button class="hamburger" onclick="openSidebar()" aria-label="Menu"><span></span><span></span><span></span></button>
+        <div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
+          <div class="page-sub" id="pageSub">Overview of the institute</div>
+        </div>
       </div>
       <div class="today" id="todayLabel"></div>
     </div>
@@ -259,7 +299,7 @@
    STATE
    ============================================================ */
 let DB = {
-  settings: { instituteName: 'Ledger Tuition Center', adminUsername: 'admin' },
+  settings: { instituteName: 'Shree Classes', adminUsername: 'admin' },
   students: [],
   batches: [],
   attendance: {},        // key: batchId__date -> { studentId: 'P'|'A' }
@@ -456,7 +496,9 @@ function renderNav(){
     document.getElementById('whoRole').textContent = 'Student · #' + (s?s.roll:'');
   }
 }
-function goTo(page){ currentPage = page; render(); }
+function goTo(page){ currentPage = page; render(); closeSidebar(); }
+function openSidebar(){ document.getElementById('sidebarNav').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebarNav').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
 
 const TITLES = {
   dashboard:['Dashboard','Overview of the institute'],
