@@ -23,6 +23,25 @@
   body{ font-family:'Inter',sans-serif; background:var(--paper); color:var(--text); -webkit-font-smoothing:antialiased; }
   #app{display:flex; min-height:100vh;}
 
+  /* ---------- LANGUAGE SWITCH ---------- */
+  .lang-switch{
+    position:fixed; top:16px; right:16px; z-index:200;
+    display:flex; background:rgba(27,42,34,0.9); border:1px solid rgba(237,239,227,0.18);
+    border-radius:20px; padding:3px; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,0.18);
+    backdrop-filter:blur(4px);
+  }
+  .lang-btn{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.3px;
+    color:#D8DBC9; background:transparent; border:none; padding:6px 11px; border-radius:16px;
+    cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .lang-btn:hover{ color:#F7F8F1; background:rgba(255,255,255,0.08); }
+  .lang-btn.active{ background:var(--mustard); color:#2A2110; }
+  @media (max-width:520px){
+    .lang-switch{ top:8px; right:8px; padding:2px; }
+    .lang-btn{ padding:5px 8px; font-size:10px; }
+  }
+
   /* ---------- LOGIN ---------- */
   #loginScreen{
     min-height:100vh; display:flex; align-items:center; justify-content:center;
@@ -231,11 +250,16 @@
 </style>
 </head>
 <body>
+<div class="lang-switch" id="langSwitch">
+  <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" data-lang="hi" onclick="setLang('hi')">हिं</button>
+  <button class="lang-btn" data-lang="mr" onclick="setLang('mr')">मरा</button>
+</div>
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-head">
       <div class="login-mark">Shree Classes</div>
-      <div class="login-sub">Tuition ERP</div>
+      <div class="login-sub" id="loginTagline">Tuition ERP</div>
     </div>
     <div class="login-tabs">
       <div class="login-tab active" id="tabAdmin" onclick="switchLoginTab('admin')">Admin / Teacher</div>
@@ -244,8 +268,8 @@
     <div class="login-body">
       <div class="login-err" id="loginErr"></div>
       <div class="field"><label id="loginUserLabel">Username</label><input id="loginUser" placeholder="admin"></div>
-      <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
-      <button class="btn btn-accent btn-block" onclick="attemptLogin()">Sign In</button>
+      <div class="field"><label id="loginPassLabel">Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-accent btn-block" id="signInBtn" onclick="attemptLogin()">Sign In</button>
       <div class="login-hint" id="loginHint">Default admin login: <strong>admin</strong> / <strong>admin123</strong>. Change it after signing in.</div>
       <div style="text-align:center; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:9px; color:#B7BCA4;">BUILD-MARKER-API-BACKEND-2026-A</div>
     </div>
@@ -257,13 +281,13 @@
   <nav class="sidebar" id="sidebarNav">
     <div class="brand">
       <div class="brand-mark">Shree Classes</div>
-      <div class="brand-sub">Tuition ERP</div>
+      <div class="brand-sub" id="brandTagline">Tuition ERP</div>
     </div>
     <ul class="nav" id="navList"></ul>
     <div class="sidebar-foot">
       <div class="who" id="whoName">—</div>
       <div class="who-role" id="whoRole">—</div>
-      <button class="logout-btn" onclick="logout()">Log out</button>
+      <button class="logout-btn" id="logoutBtn" onclick="logout()">Log out</button>
     </div>
   </nav>
   <div class="main">
@@ -330,6 +354,359 @@ const NAV_STUDENT = [
   {id:'stimetable', label:'Timetable', ico:'▤'},
   {id:'sprofile', label:'Profile', ico:'●'},
 ];
+
+/* ============================================================
+   LANGUAGE / I18N
+   ============================================================ */
+const I18N = {
+  en:{
+    tagline:'Tuition ERP', tabAdminTeacher:'Admin / Teacher', tabStudent:'Student',
+    username:'Username', password:'Password', signIn:'Sign In', logout:'Log out',
+    signingIn:'Signing in...', incorrectLogin:'Incorrect username or password.',
+    adminRole:'Admin / Teacher', studentWord:'Student', administrator:'Administrator',
+    loginHint:'Default admin login: <strong>admin</strong> / <strong>admin123</strong>. Change it after signing in.',
+    nav:{dashboard:'Dashboard', students:'Students', batches:'Batches', attendance:'Attendance', homework:'Homework', fees:'Fees', timetable:'Timetable', settings:'Settings', profile:'Profile'},
+    titles:{
+      dashboard:['Dashboard','Overview of the institute'],
+      students:['Students','Manage enrolled students'],
+      batches:['Batches','Manage classes and schedules'],
+      attendance:['Attendance','Mark and review attendance'],
+      homework:['Homework','Assign and track homework'],
+      fees:['Fees','Track dues and collections'],
+      timetable:['Timetable','Weekly class schedule'],
+      settings:['Settings','Manage your admin login'],
+      sdashboard:['Dashboard','Your overview'],
+      shomework:['Homework','Assignments from your teacher'],
+      sattendance:['Attendance','Your attendance record'],
+      sfees:['Fees','Your invoices and payments'],
+      stimetable:['Timetable','Your weekly schedule'],
+      sprofile:['Profile','Your details'],
+    },
+    c:{
+      edit:'Edit', delete:'Delete', cancel:'Cancel', close:'Close', unknown:'Unknown', unassigned:'Unassigned', na:'—',
+      addStudent:'+ Add Student', searchStudentPlaceholder:'Search by name or roll number...',
+      noStudentsFoundTitle:'No students found', tryDifferentSearch:'Try a different search.', addFirstStudent:'Add your first student to get started.',
+      colRoll:'Roll', colName:'Name', colStd:'Std', colBatch:'Batch', colMonthlyFee:'Monthly Fee', colLogin:'Login', colPhone:'Phone', colAdmitted:'Admitted',
+      resetPw:'Reset PW',
+      editStudent:'Edit Student', addStudentTitle:'Add Student',
+      fullName:'Full Name', rollNumber:'Roll Number', stdClass:'Std / Class', guardianName:'Guardian Name', monthlyFeeRs:'Monthly Fee (₹)', admissionDate:'Admission Date',
+      unassignedOpt:'— Unassigned —',
+      feeHint:"Each student can have their own fee — it doesn't have to match the batch rate. Picking a batch will suggest that batch's fee, but you can override it.",
+      loginAutoHint:'A student login will be created automatically (username = roll number, default password: student123). You can change these anytime.',
+      saveStudent:'Save Student',
+      credentialsTitle:'Student Added — Share These Login Details',
+      credentialsHint:'Give this username and password to {name} or their parent. They can log in from the Student tab on the login screen to view homework, attendance and pay fees.',
+      usernameLabel:'Username', passwordLabel:'Password',
+      credentialsHint2:'They can change this password anytime from their Profile page after logging in.',
+      doneBtn:'Done',
+      colSchedule:'Schedule', colStudents:'Students',
+      editPrefix:'Edit ', bfeeLabel:'Monthly Fee (₹)', daysLabel:'Days', timeLabel:'Time', timeExample:'e.g. 7:00 AM – 9:00 AM',
+      saveBatch:'Save Batch',
+      batchLabel:'Batch', dateLabel:'Date', markAllPresent:'Mark all present', markAllAbsent:'Mark all absent',
+      selectABatch:'Select a batch', noBatchesYetSel:'No batches yet', present:'present',
+      noBatchesTitle:'No batches yet', createBatchFirst:'Create a batch first, then mark attendance.',
+      noStudentsInBatchTitle:'No students in this batch', assignFromStudents:'Assign students to this batch from the Students tab.',
+      assignHomework:'+ Assign Homework', noHwTitle:'No homework assigned yet', assignHwDetail:'Assign homework to a whole batch or a single student.',
+      doneStatus:'Done', notDoneYet:'Not done yet', doneCount:'done',
+      dueLabel:'Due', postedLabel:'Posted',
+      wholeBatchSuffix:' (whole batch)', unknownBatch:'Unknown batch', unknownStudent:'👤 Unknown student',
+      editHomework:'Edit Homework', assignHomeworkTitle:'Assign Homework',
+      wholeBatchBtn:'Whole Batch', individualStudentBtn:'Individual Student',
+      noBatchesOpt:'No batches yet', noStudentsOpt:'No students yet',
+      titleLabel:'Title', titlePlaceholder:'e.g. Chapter 4 — Exercise 4.2',
+      detailsLabel:'Details', detailsPlaceholder:'Instructions for students...',
+      dueDateLabel:'Due Date',
+      attachLabel:'Attach photos or PDF', tapToAdd:'Tap to add photos or PDF files (you can add more than one)',
+      saveChanges:'Save Changes', assignBtn:'Assign',
+      justForYou:'Just for you', wholeBatchWord:'Whole batch', overdue:'Overdue', markDone:'Mark done',
+      collected:'Collected', awaitingVerification:'Awaiting Verification', pendingLabel:'Pending', totalStudentsBilled:'Total students billed',
+      payments:'payments', screenshotsToCheck:'to check', invoicesWord:'invoices', forWord:'for',
+      generateInvoices:'Generate invoices…', recordPayment:'+ Record Payment',
+      noInvoicesTitle:'No invoices for this month', noInvoicesDetail:'Click "Generate invoices…" to choose which students to bill.',
+      colScreenshot:'Screenshot', colPaidOn:'Paid On', colMode:'Mode',
+      paid:'Paid', reviewBtn:'Review', markPaidBtn:'Mark Paid', undoBtn:'Undo', viewScreenshot:'View screenshot',
+      verifyPaymentTitle:'Verify Payment — ', noScreenshotYet:'No screenshot uploaded yet.', submittedOnLbl:'Submitted on ',
+      rejectBtn:'Reject', confirmMarkPaid:'Confirm & Mark Paid',
+      generateInvoicesTitle:'Generate Invoices — ', chooseStudentsToBill:'Choose which students to bill for',
+      selectAll:'Select all', alreadyInvoiced:'Already invoiced', noFeeSetSkip:'No fee set — skip', noBatchWord:'No batch',
+      generateSelected:'Generate Selected',
+      recordPaymentTitle:'Record Payment', studentLabel:'Student', monthLabel2:'Month', amountRs:'Amount (₹)',
+      paymentMode:'Payment Mode', savePayment:'Save Payment',
+      noClasses:'No classes', timeTBD:'Time TBD',
+      yourBatch:'Your Batch', contactTeacher:'Contact your teacher', attendanceLabel:'Attendance',
+      classesPresent:'classes present', homeworkDue:'Homework Due', notYetMarkedDone:'not yet marked done',
+      feesDue:'Fees Due', pendingInvoiceWord:'pending invoice', pendingInvoicesWordPl:'pending invoices',
+      upcomingHomework:'Upcoming homework', nothingPending:'Nothing pending', allCaughtUp:"You're all caught up.",
+      noHwYetTitle:'No homework yet', teacherNotAssigned:"Your teacher hasn't assigned anything yet.",
+      overallAttendance:'Overall Attendance', presentWord:'Present', absentWord:'Absent',
+      history:'History', noAttendanceRecorded:'No attendance recorded yet', checkBackAfterClass:'Check back after your first class.',
+      colDate:'Date', colStatus:'Status',
+      parentHint:"Parents can use this same login to check dues and pay fees on {name}'s behalf — just share the username and password from the Profile page.",
+      noInvoicesYetTitle:'No invoices yet', teacherNoInvoices:"Your teacher hasn't generated any invoices for you yet.",
+      paidOnWord:'Paid on ', submittedOnWord:'Screenshot submitted on ', awaitingConfirmation:' · awaiting admin confirmation',
+      paymentPending:'Payment pending', viewResubmit:'View / Resubmit', payNow:'Pay Now',
+      payFeeTitle:'Pay Fee — ', scanQrHint:'Scan with any UPI app (PhonePe, Google Pay, Paytm) and pay the exact amount above.',
+      uploadScreenshot:'Upload payment screenshot', tapReplaceScreenshot:'Tap to replace screenshot', tapSelectScreenshot:'Tap to select a screenshot from your gallery',
+      afterSubmitHint:'After you submit, this invoice moves to "Awaiting Verification" — the admin will check your screenshot and confirm it before it shows as fully Paid.',
+      submitForVerification:"I've Paid — Submit for Verification",
+      yourDetails:'Your details', nameWord:'Name', rollNumberLbl:'Roll Number', stdClassLbl:'Std / Class', batchLbl:'Batch',
+      guardianLbl:'Guardian', phoneLbl:'Phone', admittedOnLbl:'Admitted On', usernameLbl:'Username',
+      changePassword:'Change password', newPassword:'New Password', confirmPassword:'Confirm Password',
+      atLeast6:'At least 6 characters', repeatPassword:'Repeat password', updatePassword:'Update Password',
+      institute:'Institute', instituteName:'Institute Name', saveName:'Save Name',
+      adminLogin:'Admin Login', currentPassword:'Current Password', requiredToConfirm:'Required to confirm changes',
+      newPasswordLbl:'New Password', leaveBlank:'Leave blank to keep current', confirmNewPassword:'Confirm New Password', repeatNewPassword:'Repeat new password',
+      saveLoginDetails:'Save Login Details',
+      totalWord:'total', recentlyAdmitted:'Recently admitted', noStudentsYetTitle:'No students yet', addFirstStudentTab:'Add your first student from the Students tab.',
+      pendingFeeInvoices:'Pending fee invoices', allClearTitle:'All clear', noPendingInvoicesMonth:'No pending invoices for this month.',
+      colStudent:'Student', colAmount:'Amount',
+      totalStudentsLbl:'Total Students', batchesLbl:'Batches', morningEvening:'Morning &amp; Evening', collectedLbl:'Collected —',
+      todaysAttendance:"Today's Attendance", noAttMarkedYet:'no attendance marked yet', markedPresentWord:'marked present', ofWord:'of',
+      acrossWord:'across', batchWord:'batch', batchesWord2:'batches',
+    }
+  },
+  hi:{
+    tagline:'ट्यूशन ईआरपी', tabAdminTeacher:'एडमिन / शिक्षक', tabStudent:'विद्यार्थी',
+    username:'यूज़रनेम', password:'पासवर्ड', signIn:'साइन इन करें', logout:'लॉग आउट',
+    signingIn:'साइन इन हो रहा है...', incorrectLogin:'गलत यूज़रनेम या पासवर्ड।',
+    adminRole:'एडमिन / शिक्षक', studentWord:'विद्यार्थी', administrator:'प्रशासक',
+    loginHint:'डिफ़ॉल्ट एडमिन लॉगिन: <strong>admin</strong> / <strong>admin123</strong>। साइन इन करने के बाद इसे बदलें।',
+    nav:{dashboard:'डैशबोर्ड', students:'विद्यार्थी', batches:'बैच', attendance:'उपस्थिति', homework:'गृहकार्य', fees:'फीस', timetable:'समय सारणी', settings:'सेटिंग्स', profile:'प्रोफ़ाइल'},
+    titles:{
+      dashboard:['डैशबोर्ड','संस्थान का विवरण'],
+      students:['विद्यार्थी','नामांकित विद्यार्थियों को प्रबंधित करें'],
+      batches:['बैच','कक्षाएँ और समय-सारणी प्रबंधित करें'],
+      attendance:['उपस्थिति','उपस्थिति दर्ज करें और देखें'],
+      homework:['गृहकार्य','गृहकार्य दें और ट्रैक करें'],
+      fees:['फीस','बकाया और संग्रह ट्रैक करें'],
+      timetable:['समय सारणी','साप्ताहिक कक्षा समय सारणी'],
+      settings:['सेटिंग्स','अपना एडमिन लॉगिन प्रबंधित करें'],
+      sdashboard:['डैशबोर्ड','आपका विवरण'],
+      shomework:['गृहकार्य','आपके शिक्षक द्वारा दिए गए कार्य'],
+      sattendance:['उपस्थिति','आपकी उपस्थिति का रिकॉर्ड'],
+      sfees:['फीस','आपके इनवॉइस और भुगतान'],
+      stimetable:['समय सारणी','आपकी साप्ताहिक समय सारणी'],
+      sprofile:['प्रोफ़ाइल','आपका विवरण'],
+    },
+    c:{
+      edit:'संपादित करें', delete:'हटाएं', cancel:'रद्द करें', close:'बंद करें', unknown:'अज्ञात', unassigned:'असाइन नहीं किया गया', na:'—',
+      addStudent:'+ विद्यार्थी जोड़ें', searchStudentPlaceholder:'नाम या रोल नंबर से खोजें...',
+      noStudentsFoundTitle:'कोई विद्यार्थी नहीं मिला', tryDifferentSearch:'दूसरी खोज आज़माएँ।', addFirstStudent:'शुरू करने के लिए अपना पहला विद्यार्थी जोड़ें।',
+      colRoll:'रोल', colName:'नाम', colStd:'कक्षा', colBatch:'बैच', colMonthlyFee:'मासिक फीस', colLogin:'लॉगिन', colPhone:'फ़ोन', colAdmitted:'प्रवेश तिथि',
+      resetPw:'पासवर्ड रीसेट करें',
+      editStudent:'विद्यार्थी संपादित करें', addStudentTitle:'विद्यार्थी जोड़ें',
+      fullName:'पूरा नाम', rollNumber:'रोल नंबर', stdClass:'कक्षा', guardianName:'अभिभावक का नाम', monthlyFeeRs:'मासिक फीस (₹)', admissionDate:'प्रवेश तिथि',
+      unassignedOpt:'— असाइन नहीं किया गया —',
+      feeHint:'हर विद्यार्थी की अपनी फीस हो सकती है — इसका बैच दर से मेल खाना ज़रूरी नहीं। बैच चुनने पर उसकी फीस सुझाई जाएगी, लेकिन आप उसे बदल सकते हैं।',
+      loginAutoHint:'एक विद्यार्थी लॉगिन अपने आप बन जाएगा (यूज़रनेम = रोल नंबर, डिफ़ॉल्ट पासवर्ड: student123)। आप इन्हें कभी भी बदल सकते हैं।',
+      saveStudent:'विद्यार्थी सहेजें',
+      credentialsTitle:'विद्यार्थी जोड़ा गया — ये लॉगिन विवरण साझा करें',
+      credentialsHint:'यह यूज़रनेम और पासवर्ड {name} या उनके अभिभावक को दें। वे लॉगिन स्क्रीन पर स्टूडेंट टैब से लॉगिन करके होमवर्क, उपस्थिति देख सकते हैं और फीस भर सकते हैं।',
+      usernameLabel:'यूज़रनेम', passwordLabel:'पासवर्ड',
+      credentialsHint2:'लॉगिन करने के बाद वे अपनी प्रोफ़ाइल से कभी भी यह पासवर्ड बदल सकते हैं।',
+      doneBtn:'हो गया',
+      colSchedule:'समय सारणी', colStudents:'विद्यार्थी',
+      editPrefix:'संपादित करें: ', bfeeLabel:'मासिक फीस (₹)', daysLabel:'दिन', timeLabel:'समय', timeExample:'उदा. 7:00 AM – 9:00 AM',
+      saveBatch:'बैच सहेजें',
+      batchLabel:'बैच', dateLabel:'तारीख', markAllPresent:'सभी को उपस्थित करें', markAllAbsent:'सभी को अनुपस्थित करें',
+      selectABatch:'एक बैच चुनें', noBatchesYetSel:'अभी कोई बैच नहीं', present:'उपस्थित',
+      noBatchesTitle:'अभी कोई बैच नहीं', createBatchFirst:'पहले एक बैच बनाएं, फिर उपस्थिति दर्ज करें।',
+      noStudentsInBatchTitle:'इस बैच में कोई विद्यार्थी नहीं', assignFromStudents:'विद्यार्थी टैब से इस बैच में विद्यार्थी असाइन करें।',
+      assignHomework:'+ गृहकार्य दें', noHwTitle:'अभी तक कोई गृहकार्य नहीं दिया गया', assignHwDetail:'पूरे बैच या किसी एक विद्यार्थी को गृहकार्य दें।',
+      doneStatus:'पूर्ण', notDoneYet:'अभी पूरा नहीं हुआ', doneCount:'पूर्ण',
+      dueLabel:'नियत तिथि', postedLabel:'पोस्ट किया गया',
+      wholeBatchSuffix:' (पूरा बैच)', unknownBatch:'अज्ञात बैच', unknownStudent:'👤 अज्ञात विद्यार्थी',
+      editHomework:'गृहकार्य संपादित करें', assignHomeworkTitle:'गृहकार्य दें',
+      wholeBatchBtn:'पूरा बैच', individualStudentBtn:'एकल विद्यार्थी',
+      noBatchesOpt:'अभी कोई बैच नहीं', noStudentsOpt:'अभी कोई विद्यार्थी नहीं',
+      titleLabel:'शीर्षक', titlePlaceholder:'उदा. अध्याय 4 — अभ्यास 4.2',
+      detailsLabel:'विवरण', detailsPlaceholder:'विद्यार्थियों के लिए निर्देश...',
+      dueDateLabel:'नियत तिथि',
+      attachLabel:'फ़ोटो या PDF संलग्न करें', tapToAdd:'फ़ोटो या PDF फ़ाइलें जोड़ने के लिए टैप करें (एक से अधिक जोड़ सकते हैं)',
+      saveChanges:'बदलाव सहेजें', assignBtn:'दें',
+      justForYou:'सिर्फ़ आपके लिए', wholeBatchWord:'पूरा बैच', overdue:'समय सीमा बीती', markDone:'पूर्ण करें',
+      collected:'जमा हुआ', awaitingVerification:'सत्यापन लंबित', pendingLabel:'लंबित', totalStudentsBilled:'कुल बिल किए गए विद्यार्थी',
+      payments:'भुगतान', screenshotsToCheck:'जाँचने हेतु', invoicesWord:'चालान', forWord:'के लिए',
+      generateInvoices:'चालान बनाएं…', recordPayment:'+ भुगतान दर्ज करें',
+      noInvoicesTitle:'इस महीने के लिए कोई चालान नहीं', noInvoicesDetail:'बिल किए जाने वाले विद्यार्थी चुनने के लिए "चालान बनाएं…" पर क्लिक करें।',
+      colScreenshot:'स्क्रीनशॉट', colPaidOn:'भुगतान तिथि', colMode:'माध्यम',
+      paid:'भुगतान हो गया', reviewBtn:'समीक्षा करें', markPaidBtn:'भुगतान हुआ चिह्नित करें', undoBtn:'पूर्ववत करें', viewScreenshot:'स्क्रीनशॉट देखें',
+      verifyPaymentTitle:'भुगतान सत्यापित करें — ', noScreenshotYet:'अभी तक कोई स्क्रीनशॉट अपलोड नहीं हुआ।', submittedOnLbl:'सबमिट किया गया: ',
+      rejectBtn:'अस्वीकार करें', confirmMarkPaid:'पुष्टि करें और भुगतान हुआ चिह्नित करें',
+      generateInvoicesTitle:'चालान बनाएं — ', chooseStudentsToBill:'बिल किए जाने वाले विद्यार्थी चुनें',
+      selectAll:'सभी चुनें', alreadyInvoiced:'पहले से चालान बन चुका है', noFeeSetSkip:'फीस तय नहीं — छोड़ें', noBatchWord:'कोई बैच नहीं',
+      generateSelected:'चयनित बनाएं',
+      recordPaymentTitle:'भुगतान दर्ज करें', studentLabel:'विद्यार्थी', monthLabel2:'महीना', amountRs:'राशि (₹)',
+      paymentMode:'भुगतान माध्यम', savePayment:'भुगतान सहेजें',
+      noClasses:'कोई कक्षा नहीं', timeTBD:'समय तय नहीं',
+      yourBatch:'आपका बैच', contactTeacher:'अपने शिक्षक से संपर्क करें', attendanceLabel:'उपस्थिति',
+      classesPresent:'कक्षाओं में उपस्थित', homeworkDue:'बकाया गृहकार्य', notYetMarkedDone:'अभी पूर्ण चिह्नित नहीं',
+      feesDue:'बकाया फीस', pendingInvoiceWord:'लंबित चालान', pendingInvoicesWordPl:'लंबित चालान',
+      upcomingHomework:'आगामी गृहकार्य', nothingPending:'कुछ भी लंबित नहीं', allCaughtUp:'आप पूरी तरह अपडेट हैं।',
+      noHwYetTitle:'अभी तक कोई गृहकार्य नहीं', teacherNotAssigned:'आपके शिक्षक ने अभी तक कुछ भी नहीं दिया है।',
+      overallAttendance:'कुल उपस्थिति', presentWord:'उपस्थित', absentWord:'अनुपस्थित',
+      history:'इतिहास', noAttendanceRecorded:'अभी तक उपस्थिति दर्ज नहीं हुई', checkBackAfterClass:'अपनी पहली कक्षा के बाद देखें।',
+      colDate:'तारीख', colStatus:'स्थिति',
+      parentHint:'अभिभावक इसी लॉगिन का उपयोग करके {name} की ओर से बकाया देख सकते हैं और फीस भर सकते हैं — बस प्रोफ़ाइल पेज से यूज़रनेम और पासवर्ड साझा करें।',
+      noInvoicesYetTitle:'अभी तक कोई चालान नहीं', teacherNoInvoices:'आपके शिक्षक ने अभी तक आपके लिए कोई चालान नहीं बनाया है।',
+      paidOnWord:'भुगतान किया गया: ', submittedOnWord:'स्क्रीनशॉट सबमिट किया गया: ', awaitingConfirmation:' · एडमिन की पुष्टि लंबित',
+      paymentPending:'भुगतान लंबित', viewResubmit:'देखें / फिर से सबमिट करें', payNow:'अभी भुगतान करें',
+      payFeeTitle:'फीस भरें — ', scanQrHint:'किसी भी UPI ऐप (PhonePe, Google Pay, Paytm) से स्कैन करें और ऊपर दी गई सटीक राशि भरें।',
+      uploadScreenshot:'भुगतान स्क्रीनशॉट अपलोड करें', tapReplaceScreenshot:'स्क्रीनशॉट बदलने के लिए टैप करें', tapSelectScreenshot:'गैलरी से स्क्रीनशॉट चुनने के लिए टैप करें',
+      afterSubmitHint:'सबमिट करने के बाद, यह चालान "सत्यापन लंबित" में चला जाएगा — एडमिन आपके स्क्रीनशॉट की जाँच करके इसे पूरी तरह भुगतान हुआ चिह्नित करेंगे।',
+      submitForVerification:'मैंने भुगतान कर दिया — सत्यापन के लिए सबमिट करें',
+      yourDetails:'आपका विवरण', nameWord:'नाम', rollNumberLbl:'रोल नंबर', stdClassLbl:'कक्षा', batchLbl:'बैच',
+      guardianLbl:'अभिभावक', phoneLbl:'फ़ोन', admittedOnLbl:'प्रवेश तिथि', usernameLbl:'यूज़रनेम',
+      changePassword:'पासवर्ड बदलें', newPassword:'नया पासवर्ड', confirmPassword:'पासवर्ड की पुष्टि करें',
+      atLeast6:'कम से कम 6 अक्षर', repeatPassword:'पासवर्ड दोबारा लिखें', updatePassword:'पासवर्ड अपडेट करें',
+      institute:'संस्थान', instituteName:'संस्थान का नाम', saveName:'नाम सहेजें',
+      adminLogin:'एडमिन लॉगिन', currentPassword:'वर्तमान पासवर्ड', requiredToConfirm:'बदलावों की पुष्टि के लिए आवश्यक',
+      newPasswordLbl:'नया पासवर्ड', leaveBlank:'मौजूदा रखने के लिए खाली छोड़ें', confirmNewPassword:'नए पासवर्ड की पुष्टि करें', repeatNewPassword:'नया पासवर्ड दोबारा लिखें',
+      saveLoginDetails:'लॉगिन विवरण सहेजें',
+      totalWord:'कुल', recentlyAdmitted:'हाल ही में जोड़े गए', noStudentsYetTitle:'अभी कोई विद्यार्थी नहीं', addFirstStudentTab:'विद्यार्थी टैब से अपना पहला विद्यार्थी जोड़ें।',
+      pendingFeeInvoices:'लंबित फीस चालान', allClearTitle:'सब ठीक है', noPendingInvoicesMonth:'इस महीने कोई लंबित चालान नहीं।',
+      colStudent:'विद्यार्थी', colAmount:'राशि',
+      totalStudentsLbl:'कुल विद्यार्थी', batchesLbl:'बैच', morningEvening:'सुबह और शाम', collectedLbl:'जमा हुआ —',
+      todaysAttendance:'आज की उपस्थिति', noAttMarkedYet:'अभी उपस्थिति दर्ज नहीं हुई', markedPresentWord:'उपस्थित दर्ज', ofWord:'में से',
+      acrossWord:'कुल', batchWord:'बैच', batchesWord2:'बैच',
+    }
+  },
+  mr:{
+    tagline:'ट्यूशन ईआरपी', tabAdminTeacher:'ॲडमिन / शिक्षक', tabStudent:'विद्यार्थी',
+    username:'युजरनेम', password:'पासवर्ड', signIn:'साइन इन करा', logout:'लॉग आउट',
+    signingIn:'साइन इन होत आहे...', incorrectLogin:'चुकीचे युजरनेम किंवा पासवर्ड.',
+    adminRole:'ॲडमिन / शिक्षक', studentWord:'विद्यार्थी', administrator:'प्रशासक',
+    loginHint:'डिफॉल्ट ॲडमिन लॉगिन: <strong>admin</strong> / <strong>admin123</strong>. साइन इन केल्यानंतर ते बदला.',
+    nav:{dashboard:'डॅशबोर्ड', students:'विद्यार्थी', batches:'बॅच', attendance:'हजेरी', homework:'गृहपाठ', fees:'फी', timetable:'वेळापत्रक', settings:'सेटिंग्ज', profile:'प्रोफाइल'},
+    titles:{
+      dashboard:['डॅशबोर्ड','संस्थेचा आढावा'],
+      students:['विद्यार्थी','नोंदणीकृत विद्यार्थ्यांचे व्यवस्थापन करा'],
+      batches:['बॅच','वर्ग आणि वेळापत्रक व्यवस्थापित करा'],
+      attendance:['हजेरी','हजेरी नोंदवा आणि तपासा'],
+      homework:['गृहपाठ','गृहपाठ द्या आणि ट्रॅक करा'],
+      fees:['फी','थकबाकी आणि जमा रक्कम ट्रॅक करा'],
+      timetable:['वेळापत्रक','साप्ताहिक वर्ग वेळापत्रक'],
+      settings:['सेटिंग्ज','तुमचा ॲडमिन लॉगिन व्यवस्थापित करा'],
+      sdashboard:['डॅशबोर्ड','तुमचा आढावा'],
+      shomework:['गृहपाठ','तुमच्या शिक्षकांनी दिलेले काम'],
+      sattendance:['हजेरी','तुमची हजेरी नोंद'],
+      sfees:['फी','तुमची इनव्हॉइस आणि पेमेंट'],
+      stimetable:['वेळापत्रक','तुमचे साप्ताहिक वेळापत्रक'],
+      sprofile:['प्रोफाइल','तुमचे तपशील'],
+    },
+    c:{
+      edit:'संपादित करा', delete:'हटवा', cancel:'रद्द करा', close:'बंद करा', unknown:'अज्ञात', unassigned:'नियुक्त नाही', na:'—',
+      addStudent:'+ विद्यार्थी जोडा', searchStudentPlaceholder:'नाव किंवा रोल नंबरने शोधा...',
+      noStudentsFoundTitle:'कोणताही विद्यार्थी सापडला नाही', tryDifferentSearch:'वेगळा शोध करून पहा.', addFirstStudent:'सुरुवात करण्यासाठी तुमचा पहिला विद्यार्थी जोडा.',
+      colRoll:'रोल', colName:'नाव', colStd:'इयत्ता', colBatch:'बॅच', colMonthlyFee:'मासिक फी', colLogin:'लॉगिन', colPhone:'फोन', colAdmitted:'प्रवेश तारीख',
+      resetPw:'पासवर्ड रीसेट करा',
+      editStudent:'विद्यार्थी संपादित करा', addStudentTitle:'विद्यार्थी जोडा',
+      fullName:'पूर्ण नाव', rollNumber:'रोल नंबर', stdClass:'इयत्ता', guardianName:'पालकाचे नाव', monthlyFeeRs:'मासिक फी (₹)', admissionDate:'प्रवेश तारीख',
+      unassignedOpt:'— नियुक्त नाही —',
+      feeHint:'प्रत्येक विद्यार्थ्याची स्वतःची फी असू शकते — ती बॅच दराशी जुळणे आवश्यक नाही. बॅच निवडल्यास त्या बॅचची फी सुचवली जाईल, पण तुम्ही ती बदलू शकता.',
+      loginAutoHint:'विद्यार्थ्याचे लॉगिन आपोआप तयार होईल (युजरनेम = रोल नंबर, डीफॉल्ट पासवर्ड: student123). तुम्ही हे कधीही बदलू शकता.',
+      saveStudent:'विद्यार्थी जतन करा',
+      credentialsTitle:'विद्यार्थी जोडला — हे लॉगिन तपशील शेअर करा',
+      credentialsHint:'हे युजरनेम आणि पासवर्ड {name} किंवा त्यांच्या पालकांना द्या. ते लॉगिन स्क्रीनवरील स्टुडंट टॅबमधून लॉगिन करून गृहपाठ, हजेरी पाहू शकतात आणि फी भरू शकतात.',
+      usernameLabel:'युजरनेम', passwordLabel:'पासवर्ड',
+      credentialsHint2:'लॉगिन केल्यानंतर ते त्यांच्या प्रोफाइल पेजवरून हा पासवर्ड कधीही बदलू शकतात.',
+      doneBtn:'झाले',
+      colSchedule:'वेळापत्रक', colStudents:'विद्यार्थी',
+      editPrefix:'संपादित करा: ', bfeeLabel:'मासिक फी (₹)', daysLabel:'दिवस', timeLabel:'वेळ', timeExample:'उदा. 7:00 AM – 9:00 AM',
+      saveBatch:'बॅच जतन करा',
+      batchLabel:'बॅच', dateLabel:'तारीख', markAllPresent:'सर्वांना हजर करा', markAllAbsent:'सर्वांना गैरहजर करा',
+      selectABatch:'एक बॅच निवडा', noBatchesYetSel:'अजून बॅच नाही', present:'हजर',
+      noBatchesTitle:'अजून बॅच नाही', createBatchFirst:'आधी एक बॅच तयार करा, मग हजेरी नोंदवा.',
+      noStudentsInBatchTitle:'या बॅचमध्ये विद्यार्थी नाहीत', assignFromStudents:'विद्यार्थी टॅबमधून या बॅचला विद्यार्थी नियुक्त करा.',
+      assignHomework:'+ गृहपाठ द्या', noHwTitle:'अजून गृहपाठ दिलेला नाही', assignHwDetail:'संपूर्ण बॅचला किंवा एका विद्यार्थ्याला गृहपाठ द्या.',
+      doneStatus:'पूर्ण', notDoneYet:'अजून पूर्ण नाही', doneCount:'पूर्ण',
+      dueLabel:'अंतिम तारीख', postedLabel:'पोस्ट केले',
+      wholeBatchSuffix:' (संपूर्ण बॅच)', unknownBatch:'अज्ञात बॅच', unknownStudent:'👤 अज्ञात विद्यार्थी',
+      editHomework:'गृहपाठ संपादित करा', assignHomeworkTitle:'गृहपाठ द्या',
+      wholeBatchBtn:'संपूर्ण बॅच', individualStudentBtn:'एकल विद्यार्थी',
+      noBatchesOpt:'अजून बॅच नाही', noStudentsOpt:'अजून विद्यार्थी नाही',
+      titleLabel:'शीर्षक', titlePlaceholder:'उदा. प्रकरण 4 — सराव 4.2',
+      detailsLabel:'तपशील', detailsPlaceholder:'विद्यार्थ्यांसाठी सूचना...',
+      dueDateLabel:'अंतिम तारीख',
+      attachLabel:'फोटो किंवा PDF जोडा', tapToAdd:'फोटो किंवा PDF फाइल्स जोडण्यासाठी टॅप करा (एकापेक्षा जास्त जोडू शकता)',
+      saveChanges:'बदल जतन करा', assignBtn:'द्या',
+      justForYou:'फक्त तुमच्यासाठी', wholeBatchWord:'संपूर्ण बॅच', overdue:'मुदत उलटली', markDone:'पूर्ण करा',
+      collected:'जमा झाले', awaitingVerification:'पडताळणी प्रलंबित', pendingLabel:'प्रलंबित', totalStudentsBilled:'एकूण बिल केलेले विद्यार्थी',
+      payments:'पेमेंट्स', screenshotsToCheck:'तपासायचे आहेत', invoicesWord:'इनव्हॉइस', forWord:'साठी',
+      generateInvoices:'इनव्हॉइस तयार करा…', recordPayment:'+ पेमेंट नोंदवा',
+      noInvoicesTitle:'या महिन्यासाठी इनव्हॉइस नाहीत', noInvoicesDetail:'कोणत्या विद्यार्थ्यांना बिल करायचे ते निवडण्यासाठी "इनव्हॉइस तयार करा…" वर क्लिक करा.',
+      colScreenshot:'स्क्रीनशॉट', colPaidOn:'पेमेंट तारीख', colMode:'माध्यम',
+      paid:'पेमेंट झाले', reviewBtn:'तपासा', markPaidBtn:'पेमेंट झाले चिन्हांकित करा', undoBtn:'पूर्ववत करा', viewScreenshot:'स्क्रीनशॉट पहा',
+      verifyPaymentTitle:'पेमेंट पडताळा — ', noScreenshotYet:'अजून स्क्रीनशॉट अपलोड केलेला नाही.', submittedOnLbl:'सबमिट केले: ',
+      rejectBtn:'नाकारा', confirmMarkPaid:'पुष्टी करा आणि पेमेंट झाले चिन्हांकित करा',
+      generateInvoicesTitle:'इनव्हॉइस तयार करा — ', chooseStudentsToBill:'बिल करायचे विद्यार्थी निवडा',
+      selectAll:'सर्व निवडा', alreadyInvoiced:'आधीच इनव्हॉइस झाले', noFeeSetSkip:'फी ठरलेली नाही — वगळा', noBatchWord:'बॅच नाही',
+      generateSelected:'निवडलेले तयार करा',
+      recordPaymentTitle:'पेमेंट नोंदवा', studentLabel:'विद्यार्थी', monthLabel2:'महिना', amountRs:'रक्कम (₹)',
+      paymentMode:'पेमेंट माध्यम', savePayment:'पेमेंट जतन करा',
+      noClasses:'वर्ग नाहीत', timeTBD:'वेळ ठरलेली नाही',
+      yourBatch:'तुमची बॅच', contactTeacher:'तुमच्या शिक्षकांशी संपर्क साधा', attendanceLabel:'हजेरी',
+      classesPresent:'वर्गांना हजर', homeworkDue:'बाकी गृहपाठ', notYetMarkedDone:'अजून पूर्ण चिन्हांकित नाही',
+      feesDue:'बाकी फी', pendingInvoiceWord:'प्रलंबित इनव्हॉइस', pendingInvoicesWordPl:'प्रलंबित इनव्हॉइस',
+      upcomingHomework:'आगामी गृहपाठ', nothingPending:'काहीही प्रलंबित नाही', allCaughtUp:'तुम्ही पूर्णपणे अपडेट आहात.',
+      noHwYetTitle:'अजून गृहपाठ नाही', teacherNotAssigned:'तुमच्या शिक्षकांनी अजून काहीही दिलेले नाही.',
+      overallAttendance:'एकूण हजेरी', presentWord:'हजर', absentWord:'गैरहजर',
+      history:'इतिहास', noAttendanceRecorded:'अजून हजेरी नोंदवलेली नाही', checkBackAfterClass:'तुमच्या पहिल्या वर्गानंतर पुन्हा पाहा.',
+      colDate:'तारीख', colStatus:'स्थिती',
+      parentHint:'पालक याच लॉगिनचा वापर करून {name} च्या वतीने बाकी तपासू शकतात आणि फी भरू शकतात — फक्त प्रोफाइल पेजवरून युजरनेम आणि पासवर्ड शेअर करा.',
+      noInvoicesYetTitle:'अजून इनव्हॉइस नाहीत', teacherNoInvoices:'तुमच्या शिक्षकांनी अजून तुमच्यासाठी इनव्हॉइस तयार केलेला नाही.',
+      paidOnWord:'पेमेंट केले: ', submittedOnWord:'स्क्रीनशॉट सबमिट केला: ', awaitingConfirmation:' · ॲडमिनच्या पुष्टीची प्रतीक्षा',
+      paymentPending:'पेमेंट प्रलंबित', viewResubmit:'पहा / पुन्हा सबमिट करा', payNow:'आता भरा',
+      payFeeTitle:'फी भरा — ', scanQrHint:'कोणत्याही UPI ॲपने (PhonePe, Google Pay, Paytm) स्कॅन करा आणि वरील नेमकी रक्कम भरा.',
+      uploadScreenshot:'पेमेंट स्क्रीनशॉट अपलोड करा', tapReplaceScreenshot:'स्क्रीनशॉट बदलण्यासाठी टॅप करा', tapSelectScreenshot:'गॅलरीतून स्क्रीनशॉट निवडण्यासाठी टॅप करा',
+      afterSubmitHint:'सबमिट केल्यानंतर, हे इनव्हॉइस "पडताळणी प्रलंबित" मध्ये जाईल — ॲडमिन तुमचा स्क्रीनशॉट तपासून तो पूर्णपणे पेमेंट झाले असे चिन्हांकित करतील.',
+      submitForVerification:'मी पेमेंट केले — पडताळणीसाठी सबमिट करा',
+      yourDetails:'तुमचे तपशील', nameWord:'नाव', rollNumberLbl:'रोल नंबर', stdClassLbl:'इयत्ता', batchLbl:'बॅच',
+      guardianLbl:'पालक', phoneLbl:'फोन', admittedOnLbl:'प्रवेश तारीख', usernameLbl:'युजरनेम',
+      changePassword:'पासवर्ड बदला', newPassword:'नवीन पासवर्ड', confirmPassword:'पासवर्डची पुष्टी करा',
+      atLeast6:'किमान 6 अक्षरे', repeatPassword:'पासवर्ड पुन्हा टाका', updatePassword:'पासवर्ड अपडेट करा',
+      institute:'संस्था', instituteName:'संस्थेचे नाव', saveName:'नाव जतन करा',
+      adminLogin:'ॲडमिन लॉगिन', currentPassword:'सध्याचा पासवर्ड', requiredToConfirm:'बदलांच्या पुष्टीसाठी आवश्यक',
+      newPasswordLbl:'नवीन पासवर्ड', leaveBlank:'सध्याचा ठेवण्यासाठी रिकामे सोडा', confirmNewPassword:'नवीन पासवर्डची पुष्टी करा', repeatNewPassword:'नवीन पासवर्ड पुन्हा टाका',
+      saveLoginDetails:'लॉगिन तपशील जतन करा',
+      totalWord:'एकूण', recentlyAdmitted:'नुकतेच दाखल झालेले', noStudentsYetTitle:'अजून विद्यार्थी नाहीत', addFirstStudentTab:'विद्यार्थी टॅबमधून तुमचा पहिला विद्यार्थी जोडा.',
+      pendingFeeInvoices:'प्रलंबित फी इनव्हॉइस', allClearTitle:'सर्व काही ठीक', noPendingInvoicesMonth:'या महिन्यासाठी प्रलंबित इनव्हॉइस नाहीत.',
+      colStudent:'विद्यार्थी', colAmount:'रक्कम',
+      totalStudentsLbl:'एकूण विद्यार्थी', batchesLbl:'बॅच', morningEvening:'सकाळ आणि संध्याकाळ', collectedLbl:'जमा झाले —',
+      todaysAttendance:'आजची हजेरी', noAttMarkedYet:'अजून हजेरी नोंदवलेली नाही', markedPresentWord:'हजर नोंदवले', ofWord:'पैकी',
+      acrossWord:'एकूण', batchWord:'बॅच', batchesWord2:'बॅच',
+    }
+  }
+};
+let currentLang = localStorage.getItem('lang') || 'en';
+function t(path){
+  const parts = path.split('.');
+  let node = I18N[currentLang];
+  for(const p of parts){ node = node ? node[p] : undefined; }
+  if(node===undefined){
+    node = I18N.en;
+    for(const p of parts){ node = node ? node[p] : undefined; }
+  }
+  return node;
+}
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  applyLanguage();
+}
+function applyLanguage(){
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang===currentLang));
+  document.getElementById('loginTagline').textContent = t('tagline');
+  document.getElementById('brandTagline').textContent = t('tagline');
+  document.getElementById('tabAdmin').textContent = t('tabAdminTeacher');
+  document.getElementById('tabStudent').textContent = t('tabStudent');
+  document.getElementById('loginUserLabel').textContent = t('username');
+  document.getElementById('loginPassLabel').textContent = t('password');
+  document.getElementById('signInBtn').textContent = t('signIn');
+  document.getElementById('loginHint').innerHTML = t('loginHint');
+  document.getElementById('logoutBtn').textContent = t('logout');
+  if(session) render();
+}
 
 function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -438,7 +815,7 @@ async function attemptLogin(){
   const errBox = document.getElementById('loginErr');
   errBox.style.display = 'none';
   const btn = document.querySelector('.login-body .btn-accent');
-  if(btn){ btn.disabled = true; btn.textContent = 'Signing in...'; }
+  if(btn){ btn.disabled = true; btn.textContent = t('c.signingIn'); }
   try{
     const result = await apiFetch('/api/login', {
       method: 'POST',
@@ -448,10 +825,10 @@ async function attemptLogin(){
     session = loginTab==='admin' ? {role:'admin'} : {role:'student', id: result.id};
     await enterApp();
   }catch(e){
-    errBox.textContent = e.message || 'Incorrect username or password.';
+    errBox.textContent = e.message || t('c.incorrectLogin');
     errBox.style.display = 'block';
   }finally{
-    if(btn){ btn.disabled = false; btn.textContent = 'Sign In'; }
+    if(btn){ btn.disabled = false; btn.textContent = t('signIn'); }
   }
 }
 async function enterApp(){
@@ -474,6 +851,12 @@ function logout(){
 /* ============================================================
    NAV / RENDER SHELL
    ============================================================ */
+const NAV_KEY_MAP = {
+  dashboard:'dashboard', students:'students', batches:'batches', attendance:'attendance',
+  homework:'homework', fees:'fees', timetable:'timetable', settings:'settings',
+  sdashboard:'dashboard', shomework:'homework', sattendance:'attendance', sfees:'fees',
+  stimetable:'timetable', sprofile:'profile'
+};
 function renderNav(){
   const ul = document.getElementById('navList');
   const NAV = session.role==='admin' ? NAV_ADMIN : NAV_STUDENT;
@@ -482,18 +865,18 @@ function renderNav(){
     if(n.id==='students') count = DB.students.length;
     if(n.id==='batches') count = DB.batches.length;
     return `<li class="nav-item ${currentPage===n.id?'active':''}" onclick="goTo('${n.id}')">
-      <span class="nav-ico">${n.ico}</span>${n.label}
+      <span class="nav-ico">${n.ico}</span>${t('nav.'+NAV_KEY_MAP[n.id])}
       ${count!==''?`<span class="nav-count">${count}</span>`:''}
     </li>`;
   }).join('');
 
   if(session.role==='admin'){
-    document.getElementById('whoName').textContent = 'Administrator';
-    document.getElementById('whoRole').textContent = 'Admin / Teacher';
+    document.getElementById('whoName').textContent = t('administrator');
+    document.getElementById('whoRole').textContent = t('adminRole');
   } else {
     const s = DB.students.find(x=>x.id===session.id);
-    document.getElementById('whoName').textContent = s ? s.name : 'Student';
-    document.getElementById('whoRole').textContent = 'Student · #' + (s?s.roll:'');
+    document.getElementById('whoName').textContent = s ? s.name : t('studentWord');
+    document.getElementById('whoRole').textContent = t('studentWord') + ' · #' + (s?s.roll:'');
   }
 }
 function goTo(page){ currentPage = page; render(); closeSidebar(); }
@@ -519,7 +902,7 @@ const TITLES = {
 function render(){
   if(!session) return;
   renderNav();
-  const [title, sub] = TITLES[currentPage];
+  const [title, sub] = t('titles.'+currentPage);
   document.getElementById('pageTitle').textContent = title;
   document.getElementById('pageSub').textContent = sub;
   document.getElementById('todayLabel').textContent = fmtDate(todayISO());
@@ -561,23 +944,23 @@ function renderDashboard(){
 
   return `
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-num">${totalStudents}</div><div class="stat-note">across ${totalBatches} batch${totalBatches===1?'':'es'}</div></div>
-    <div class="stat-card"><div class="stat-label">Batches</div><div class="stat-num">${totalBatches}</div><div class="stat-note">Morning &amp; Evening</div></div>
-    <div class="stat-card"><div class="stat-label">Collected — ${monthLabel(thisMonth)}</div><div class="stat-num">${fmtMoney(collected)}</div><div class="stat-note">${pending.length} invoice${pending.length===1?'':'s'} pending · ${fmtMoney(pendingAmt)}</div></div>
-    <div class="stat-card"><div class="stat-label">Today's Attendance</div><div class="stat-num">${attPct===null?'—':attPct+'%'}</div><div class="stat-note">${totalCt? presentCt+' of '+totalCt+' marked present' : 'no attendance marked yet'}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.totalStudentsLbl')}</div><div class="stat-num">${totalStudents}</div><div class="stat-note">${t('c.acrossWord')} ${totalBatches} ${totalBatches===1?t('c.batchWord'):t('c.batchesWord2')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.batchesLbl')}</div><div class="stat-num">${totalBatches}</div><div class="stat-note">${t('c.morningEvening')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.collectedLbl')} ${monthLabel(thisMonth)}</div><div class="stat-num">${fmtMoney(collected)}</div><div class="stat-note">${pending.length} ${pending.length===1?t('c.pendingInvoiceWord'):t('c.pendingInvoicesWordPl')} · ${fmtMoney(pendingAmt)}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.todaysAttendance')}</div><div class="stat-num">${attPct===null?'—':attPct+'%'}</div><div class="stat-note">${totalCt? presentCt+' '+t('c.ofWord')+' '+totalCt+' '+t('c.markedPresentWord') : t('c.noAttMarkedYet')}</div></div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Recently admitted</div><span class="mono" style="font-size:11.5px;color:var(--text-soft)">${DB.students.length} total</span></div>
+    <div class="panel-head"><div class="panel-title">${t('c.recentlyAdmitted')}</div><span class="mono" style="font-size:11.5px;color:var(--text-soft)">${DB.students.length} ${t('c.totalWord')}</span></div>
     <div class="panel-body">
-      ${recentStudents.length===0 ? emptyState('No students yet','Add your first student from the Students tab.') : `
+      ${recentStudents.length===0 ? emptyState(t('c.noStudentsYetTitle'), t('c.addFirstStudentTab')) : `
       <table class="ledger">
-        <thead><tr><th>Name</th><th>Std</th><th>Batch</th><th>Admitted</th><th>Phone</th></tr></thead>
+        <thead><tr><th>${t('c.colName')}</th><th>${t('c.colStd')}</th><th>${t('c.colBatch')}</th><th>${t('c.colAdmitted')}</th><th>${t('c.colPhone')}</th></tr></thead>
         <tbody>
         ${recentStudents.map(s=>{
           const b = DB.batches.find(x=>x.id===s.batchId);
           return `<tr><td><strong>${esc(s.name)}</strong> <span class="mono" style="color:var(--text-soft)">#${esc(s.roll)}</span></td>
           <td class="mono">${esc(s.std||'—')}</td>
-          <td>${b?esc(b.name):'<span class="mono" style="color:var(--text-soft)">unassigned</span>'}</td>
+          <td>${b?esc(b.name):`<span class="mono" style="color:var(--text-soft)">${t('c.unassigned')}</span>`}</td>
           <td class="mono">${fmtDate(s.admissionDate)}</td>
           <td class="mono">${esc(s.phone||'—')}</td></tr>`;
         }).join('')}
@@ -586,15 +969,15 @@ function renderDashboard(){
     </div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Pending fee invoices — ${monthLabel(thisMonth)}</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.pendingFeeInvoices')} — ${monthLabel(thisMonth)}</div></div>
     <div class="panel-body">
-      ${pending.length===0 ? emptyState('All clear','No pending invoices for this month.') : `
+      ${pending.length===0 ? emptyState(t('c.allClearTitle'), t('c.noPendingInvoicesMonth')) : `
       <table class="ledger">
-        <thead><tr><th>Student</th><th>Amount</th><th>Status</th></tr></thead>
+        <thead><tr><th>${t('c.colStudent')}</th><th>${t('c.colAmount')}</th><th>${t('c.colStatus')}</th></tr></thead>
         <tbody>
         ${pending.slice(0,6).map(f=>{
           const s = DB.students.find(x=>x.id===f.studentId);
-          return `<tr><td>${s?esc(s.name):'Unknown'}</td><td class="mono">${fmtMoney(f.amount)}</td><td><span class="pill pill-red">Pending</span></td></tr>`;
+          return `<tr><td>${s?esc(s.name):t('c.unknown')}</td><td class="mono">${fmtMoney(f.amount)}</td><td><span class="pill pill-red">${t('c.pendingLabel')}</span></td></tr>`;
         }).join('')}
         </tbody>
       </table>`}
@@ -612,14 +995,14 @@ function renderStudents(){
   );
   return `
   <div class="searchbar">
-    <input placeholder="Search by name or roll number..." value="${esc(studentSearch)}" oninput="studentSearch=this.value; render();">
-    <button class="btn btn-accent" onclick="openStudentForm()">+ Add Student</button>
+    <input placeholder="${t('c.searchStudentPlaceholder')}" value="${esc(studentSearch)}" oninput="studentSearch=this.value; render();">
+    <button class="btn btn-accent" onclick="openStudentForm()">${t('c.addStudent')}</button>
   </div>
   <div class="panel">
     <div class="panel-body" style="padding:0;">
-      ${list.length===0 ? emptyState('No students found', DB.students.length? 'Try a different search.' : 'Add your first student to get started.') : `
+      ${list.length===0 ? emptyState(t('c.noStudentsFoundTitle'), DB.students.length? t('c.tryDifferentSearch') : t('c.addFirstStudent')) : `
       <table class="ledger">
-        <thead><tr><th>Roll</th><th>Name</th><th>Std</th><th>Batch</th><th>Monthly Fee</th><th>Login</th><th>Phone</th><th>Admitted</th><th></th></tr></thead>
+        <thead><tr><th>${t('c.colRoll')}</th><th>${t('c.colName')}</th><th>${t('c.colStd')}</th><th>${t('c.colBatch')}</th><th>${t('c.colMonthlyFee')}</th><th>${t('c.colLogin')}</th><th>${t('c.colPhone')}</th><th>${t('c.colAdmitted')}</th><th></th></tr></thead>
         <tbody>
         ${list.map(s=>{
           const b = DB.batches.find(x=>x.id===s.batchId);
@@ -633,9 +1016,9 @@ function renderStudents(){
             <td class="mono">${esc(s.phone||'—')}</td>
             <td class="mono">${fmtDate(s.admissionDate)}</td>
             <td class="row-actions">
-              <button class="btn btn-ghost btn-sm" onclick="openStudentForm('${s.id}')">Edit</button>
-              <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword('${s.id}')">Reset PW</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">Delete</button>
+              <button class="btn btn-ghost btn-sm" onclick="openStudentForm('${s.id}')">${t('c.edit')}</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword('${s.id}')">${t('c.resetPw')}</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">${t('c.delete')}</button>
             </td>
           </tr>`;
         }).join('')}
@@ -654,28 +1037,28 @@ function uniqueUsername(base){
 function openStudentForm(id){
   const s = id ? DB.students.find(x=>x.id===id) : null;
   const batchOptions = DB.batches.map(b=>`<option value="${b.id}" data-fee="${b.fee}" ${s&&s.batchId===b.id?'selected':''}>${esc(b.name)}</option>`).join('');
-  document.getElementById('modalTitle').textContent = s ? 'Edit Student' : 'Add Student';
+  document.getElementById('modalTitle').textContent = s ? t('c.editStudent') : t('c.addStudentTitle');
   document.getElementById('modalBody').innerHTML = `
-    <div class="field"><label>Full Name</label><input id="f_name" value="${s?esc(s.name):''}" placeholder="e.g. Ananya Sharma"></div>
+    <div class="field"><label>${t('c.fullName')}</label><input id="f_name" value="${s?esc(s.name):''}" placeholder="e.g. Ananya Sharma"></div>
     <div class="field-row">
-      <div class="field"><label>Roll Number</label><input id="f_roll" value="${s?esc(s.roll):''}" placeholder="e.g. 24"></div>
-      <div class="field"><label>Std / Class</label><input id="f_std" value="${s?esc(s.std||''):''}" placeholder="e.g. 10th"></div>
+      <div class="field"><label>${t('c.rollNumber')}</label><input id="f_roll" value="${s?esc(s.roll):''}" placeholder="e.g. 24"></div>
+      <div class="field"><label>${t('c.stdClass')}</label><input id="f_std" value="${s?esc(s.std||''):''}" placeholder="e.g. 10th"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Batch</label><select id="f_batch" onchange="prefillFeeFromBatch(this)"><option value="">— Unassigned —</option>${batchOptions}</select></div>
-      <div class="field"><label>Guardian Name</label><input id="f_guardian" value="${s?esc(s.guardian||''):''}" placeholder="Parent / guardian"></div>
+      <div class="field"><label>${t('c.colBatch')}</label><select id="f_batch" onchange="prefillFeeFromBatch(this)"><option value="">${t('c.unassignedOpt')}</option>${batchOptions}</select></div>
+      <div class="field"><label>${t('c.guardianName')}</label><input id="f_guardian" value="${s?esc(s.guardian||''):''}" placeholder="Parent / guardian"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Phone</label><input id="f_phone" value="${s?esc(s.phone||''):''}" placeholder="10-digit number"></div>
-      <div class="field"><label>Monthly Fee (₹)</label><input id="f_fee" type="number" value="${s?s.monthlyFee:''}" placeholder="e.g. 1500"></div>
+      <div class="field"><label>${t('c.colPhone')}</label><input id="f_phone" value="${s?esc(s.phone||''):''}" placeholder="10-digit number"></div>
+      <div class="field"><label>${t('c.monthlyFeeRs')}</label><input id="f_fee" type="number" value="${s?s.monthlyFee:''}" placeholder="e.g. 1500"></div>
     </div>
-    <div class="field"><label>Admission Date</label><input id="f_admission" type="date" value="${s?s.admissionDate:todayISO()}"></div>
-    <div class="hint">Each student can have their own fee — it doesn't have to match the batch rate. Picking a batch will suggest that batch's fee, but you can override it.</div>
-    ${!s ? `<div class="hint">A student login will be created automatically (username = roll number, default password: student123). You can change these anytime.</div>` : ''}
+    <div class="field"><label>${t('c.admissionDate')}</label><input id="f_admission" type="date" value="${s?s.admissionDate:todayISO()}"></div>
+    <div class="hint">${t('c.feeHint')}</div>
+    ${!s ? `<div class="hint">${t('c.loginAutoHint')}</div>` : ''}
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveStudent('${id||''}')">Save Student</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-primary" onclick="saveStudent('${id||''}')">${t('c.saveStudent')}</button>
   `;
   openModal();
 }
@@ -722,14 +1105,14 @@ async function saveStudent(id){
   }
 }
 function showCredentialsModal(s, password){
-  document.getElementById('modalTitle').textContent = 'Student Added — Share These Login Details';
+  document.getElementById('modalTitle').textContent = t('c.credentialsTitle');
   document.getElementById('modalBody').innerHTML = `
-    <div class="hint" style="margin-top:0;">Give this username and password to ${esc(s.name)} or their parent. They can log in from the Student tab on the login screen to view homework, attendance and pay fees.</div>
-    <div class="field"><label>Username</label><input value="${esc(s.username)}" readonly onclick="this.select()"></div>
-    <div class="field"><label>Password</label><input value="${esc(password)}" readonly onclick="this.select()"></div>
-    <div class="hint">They can change this password anytime from their Profile page after logging in.</div>
+    <div class="hint" style="margin-top:0;">${t('c.credentialsHint').replace('{name}', esc(s.name))}</div>
+    <div class="field"><label>${t('c.usernameLabel')}</label><input value="${esc(s.username)}" readonly onclick="this.select()"></div>
+    <div class="field"><label>${t('c.passwordLabel')}</label><input value="${esc(password)}" readonly onclick="this.select()"></div>
+    <div class="hint">${t('c.credentialsHint2')}</div>
   `;
-  document.getElementById('modalFoot').innerHTML = `<button class="btn btn-primary" onclick="closeModal()">Done</button>`;
+  document.getElementById('modalFoot').innerHTML = `<button class="btn btn-primary" onclick="closeModal()">${t('c.doneBtn')}</button>`;
   openModal();
 }
 async function resetStudentPassword(id){
@@ -767,7 +1150,7 @@ function renderBatches(){
   <div class="panel">
     <div class="panel-body" style="padding:0;">
       <table class="ledger">
-        <thead><tr><th>Batch</th><th>Schedule</th><th>Monthly Fee</th><th>Students</th><th></th></tr></thead>
+        <thead><tr><th>${t('c.colBatch')}</th><th>${t('c.colSchedule')}</th><th>${t('c.colMonthlyFee')}</th><th>${t('c.colStudents')}</th><th></th></tr></thead>
         <tbody>
         ${DB.batches.map(b=>{
           const sCount = DB.students.filter(s=>s.batchId===b.id).length;
@@ -777,7 +1160,7 @@ function renderBatches(){
             <td class="mono">${fmtMoney(b.fee)}</td>
             <td class="mono">${sCount}</td>
             <td class="row-actions">
-              <button class="btn btn-ghost btn-sm" onclick="openBatchForm('${b.id}')">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="openBatchForm('${b.id}')">${t('c.edit')}</button>
             </td>
           </tr>`;
         }).join('')}
@@ -789,19 +1172,19 @@ function renderBatches(){
 function openBatchForm(id){
   const b = DB.batches.find(x=>x.id===id);
   const selectedDays = b ? (b.days||[]) : [];
-  document.getElementById('modalTitle').textContent = 'Edit ' + b.name;
+  document.getElementById('modalTitle').textContent = t('c.editPrefix') + b.name;
   document.getElementById('modalBody').innerHTML = `
-    <div class="field"><label>Monthly Fee (₹)</label><input id="f_bfee" type="number" value="${b.fee}" placeholder="e.g. 1500"></div>
-    <div class="field"><label>Days</label>
+    <div class="field"><label>${t('c.bfeeLabel')}</label><input id="f_bfee" type="number" value="${b.fee}" placeholder="e.g. 1500"></div>
+    <div class="field"><label>${t('c.daysLabel')}</label>
       <div style="display:flex; gap:6px; flex-wrap:wrap;">
         ${DAYS.map(d=>`<button type="button" class="btn btn-sm ${selectedDays.includes(d)?'btn-accent':'btn-ghost'}" data-day="${d}" onclick="toggleDayBtn(this)">${d}</button>`).join('')}
       </div>
     </div>
-    <div class="field"><label>Time</label><input id="f_btime" value="${esc(b.time||'')}" placeholder="e.g. 7:00 AM – 9:00 AM"></div>
+    <div class="field"><label>${t('c.timeLabel')}</label><input id="f_btime" value="${esc(b.time||'')}" placeholder="${t('c.timeExample')}"></div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveBatch('${id}')">Save Batch</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-primary" onclick="saveBatch('${id}')">${t('c.saveBatch')}</button>
   `;
   openModal();
 }
@@ -838,19 +1221,19 @@ function renderAttendancePage(container){
 
   container.innerHTML = `
     <div class="att-controls">
-      <div class="field" style="margin-bottom:0;"><label>Batch</label><select id="attBatchSel" onchange="attBatchId=this.value; render();">${DB.batches.length?batchOptions:'<option>No batches yet</option>'}</select></div>
-      <div class="field" style="margin-bottom:0;"><label>Date</label><input type="date" id="attDateSel" value="${attDate}" max="${todayISO()}" onchange="attDate=this.value; render();"></div>
-      ${students.length? `<button class="btn btn-accent" onclick="markAll('P')">Mark all present</button>
-      <button class="btn btn-ghost" onclick="markAll('A')">Mark all absent</button>` : ''}
+      <div class="field" style="margin-bottom:0;"><label>${t('c.batchLabel')}</label><select id="attBatchSel" onchange="attBatchId=this.value; render();">${DB.batches.length?batchOptions:`<option>${t('c.noBatchesYetSel')}</option>`}</select></div>
+      <div class="field" style="margin-bottom:0;"><label>${t('c.dateLabel')}</label><input type="date" id="attDateSel" value="${attDate}" max="${todayISO()}" onchange="attDate=this.value; render();"></div>
+      ${students.length? `<button class="btn btn-accent" onclick="markAll('P')">${t('c.markAllPresent')}</button>
+      <button class="btn btn-ghost" onclick="markAll('A')">${t('c.markAllAbsent')}</button>` : ''}
     </div>
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title">${DB.batches.find(b=>b.id===attBatchId) ? esc(DB.batches.find(b=>b.id===attBatchId).name) : 'Select a batch'} · ${fmtDate(attDate)}</div>
-        ${students.length? `<span class="mono" style="font-size:11.5px;color:var(--text-soft)">${Object.values(record).filter(v=>v==='P').length}/${students.length} present</span>`:''}
+        <div class="panel-title">${DB.batches.find(b=>b.id===attBatchId) ? esc(DB.batches.find(b=>b.id===attBatchId).name) : t('c.selectABatch')} · ${fmtDate(attDate)}</div>
+        ${students.length? `<span class="mono" style="font-size:11.5px;color:var(--text-soft)">${Object.values(record).filter(v=>v==='P').length}/${students.length} ${t('c.present')}</span>`:''}
       </div>
       <div class="panel-body" style="padding:${students.length?'0':'18px'};">
-        ${!DB.batches.length ? emptyState('No batches yet','Create a batch first, then mark attendance.') :
-          !students.length ? emptyState('No students in this batch','Assign students to this batch from the Students tab.') :
+        ${!DB.batches.length ? emptyState(t('c.noBatchesTitle'),t('c.createBatchFirst')) :
+          !students.length ? emptyState(t('c.noStudentsInBatchTitle'),t('c.assignFromStudents')) :
           students.map(s => `
           <div class="att-list-item">
             <div><strong>${esc(s.name)}</strong> <span class="mono" style="color:var(--text-soft)">#${esc(s.roll)}</span></div>
@@ -886,10 +1269,10 @@ function markAll(val){
 function hwTargetLabel(h){
   if(h.assignTo==='student'){
     const s = DB.students.find(x=>x.id===h.studentId);
-    return s ? '👤 '+esc(s.name) : '👤 Unknown student';
+    return s ? '👤 '+esc(s.name) : t('c.unknownStudent');
   }
   const b = DB.batches.find(x=>x.id===h.batchId);
-  return b ? esc(b.name)+' (whole batch)' : 'Unknown batch';
+  return b ? esc(b.name)+t('c.wholeBatchSuffix') : t('c.unknownBatch');
 }
 function renderAttachments(list){
   if(!list || !list.length) return '';
@@ -905,29 +1288,29 @@ function renderHomeworkAdmin(){
   const items = [...DB.homework].sort((a,b)=> (b.postedDate||'').localeCompare(a.postedDate||''));
   return `
   <div class="searchbar" style="justify-content:flex-end;">
-    <button class="btn btn-accent" onclick="openHomeworkForm()">+ Assign Homework</button>
+    <button class="btn btn-accent" onclick="openHomeworkForm()">${t('c.assignHomework')}</button>
   </div>
-  ${items.length===0 ? emptyState('No homework assigned yet','Assign homework to a whole batch or a single student.') :
+  ${items.length===0 ? emptyState(t('c.noHwTitle'),t('c.assignHwDetail')) :
     items.map(h => {
       let doneBadge = '';
       if(h.assignTo==='student'){
         const done = DB.homeworkStatus[h.id+'__'+h.studentId]==='done';
-        doneBadge = `<span class="pill ${done?'pill-green':'pill-blue'}">${done?'Done':'Not done yet'}</span>`;
+        doneBadge = `<span class="pill ${done?'pill-green':'pill-blue'}">${done?t('c.doneStatus'):t('c.notDoneYet')}</span>`;
       } else {
         const batchStudents = DB.students.filter(s=>s.batchId===h.batchId);
         const doneCt = batchStudents.filter(s => DB.homeworkStatus[h.id+'__'+s.id]==='done').length;
-        doneBadge = `<span class="pill pill-blue">${doneCt}/${batchStudents.length} done</span>`;
+        doneBadge = `<span class="pill pill-blue">${doneCt}/${batchStudents.length} ${t('c.doneCount')}</span>`;
       }
       return `<div class="hw-card">
         <div class="hw-top">
           <div>
             <div class="hw-title">${esc(h.title)}</div>
-            <div class="hw-meta">${hwTargetLabel(h)} · Due ${fmtDate(h.dueDate)} · Posted ${fmtDate(h.postedDate)}</div>
+            <div class="hw-meta">${hwTargetLabel(h)} · ${t('c.dueLabel')} ${fmtDate(h.dueDate)} · ${t('c.postedLabel')} ${fmtDate(h.postedDate)}</div>
           </div>
           <div class="row-actions">
             ${doneBadge}
-            <button class="btn btn-ghost btn-sm" onclick="openHomeworkForm('${h.id}')">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteHomework('${h.id}')">Delete</button>
+            <button class="btn btn-ghost btn-sm" onclick="openHomeworkForm('${h.id}')">${t('c.edit')}</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteHomework('${h.id}')">${t('c.delete')}</button>
           </div>
         </div>
         ${h.description ? `<div class="hw-desc">${esc(h.description)}</div>` : ''}
@@ -948,33 +1331,33 @@ function openHomeworkForm(hwId){
     const b = DB.batches.find(x=>x.id===s.batchId);
     return `<option value="${s.id}" ${editing && editing.studentId===s.id?'selected':''}>${esc(s.name)}${b?' — '+esc(b.name):''}</option>`;
   }).join('');
-  document.getElementById('modalTitle').textContent = editing ? 'Edit Homework' : 'Assign Homework';
+  document.getElementById('modalTitle').textContent = editing ? t('c.editHomework') : t('c.assignHomeworkTitle');
   document.getElementById('modalBody').innerHTML = `
     <div class="assign-toggle">
-      <button type="button" id="atBatch" class="${assignTo==='batch'?'active':''}" onclick="setHwAssignTo('batch')">Whole Batch</button>
-      <button type="button" id="atStudent" class="${assignTo==='student'?'active':''}" onclick="setHwAssignTo('student')">Individual Student</button>
+      <button type="button" id="atBatch" class="${assignTo==='batch'?'active':''}" onclick="setHwAssignTo('batch')">${t('c.wholeBatchBtn')}</button>
+      <button type="button" id="atStudent" class="${assignTo==='student'?'active':''}" onclick="setHwAssignTo('student')">${t('c.individualStudentBtn')}</button>
     </div>
     <div class="field" id="hwBatchField" style="${assignTo==='student'?'display:none;':''}">
-      <label>Batch</label><select id="f_hbatch">${DB.batches.length?batchOptions:'<option>No batches yet</option>'}</select>
+      <label>${t('c.colBatch')}</label><select id="f_hbatch">${DB.batches.length?batchOptions:`<option>${t('c.noBatchesOpt')}</option>`}</select>
     </div>
     <div class="field" id="hwStudentField" style="${assignTo==='batch'?'display:none;':''}">
-      <label>Student</label><select id="f_hstudent">${DB.students.length?studentOptions:'<option>No students yet</option>'}</select>
+      <label>${t('c.studentLabel')}</label><select id="f_hstudent">${DB.students.length?studentOptions:`<option>${t('c.noStudentsOpt')}</option>`}</select>
     </div>
-    <div class="field"><label>Title</label><input id="f_htitle" placeholder="e.g. Chapter 4 — Exercise 4.2" value="${editing?esc(editing.title):''}"></div>
-    <div class="field"><label>Details</label><textarea id="f_hdesc" placeholder="Instructions for students...">${editing?esc(editing.description||''):''}</textarea></div>
-    <div class="field"><label>Due Date</label><input type="date" id="f_hdue" value="${editing?editing.dueDate:todayISO()}"></div>
+    <div class="field"><label>${t('c.titleLabel')}</label><input id="f_htitle" placeholder="${t('c.titlePlaceholder')}" value="${editing?esc(editing.title):''}"></div>
+    <div class="field"><label>${t('c.detailsLabel')}</label><textarea id="f_hdesc" placeholder="${t('c.detailsPlaceholder')}">${editing?esc(editing.description||''):''}</textarea></div>
+    <div class="field"><label>${t('c.dueDateLabel')}</label><input type="date" id="f_hdue" value="${editing?editing.dueDate:todayISO()}"></div>
     <div class="field">
-      <label>Attach photos or PDF</label>
+      <label>${t('c.attachLabel')}</label>
       <div class="upload-box" onclick="document.getElementById('f_hwfile').click()">
-        <div style="font-size:12.5px;color:var(--text-soft);">Tap to add photos or PDF files (you can add more than one)</div>
+        <div style="font-size:12.5px;color:var(--text-soft);">${t('c.tapToAdd')}</div>
         <input type="file" id="f_hwfile" accept="image/*,.pdf,application/pdf" multiple onchange="handleHwFileSelect(event)">
       </div>
       <div id="hwAttachPreview">${renderAttachments(hwAttachments)}</div>
     </div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveHomework()">${editing?'Save Changes':'Assign'}</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-primary" onclick="saveHomework()">${editing?t('c.saveChanges'):t('c.assignBtn')}</button>
   `;
   openModal();
   refreshHwAttachPreview();
@@ -1073,48 +1456,48 @@ function renderFees(){
   const pendingAmt = monthFees.filter(f=>f.status==='pending').reduce((s,f)=>s+Number(f.amount),0);
   return `
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-label">Collected</div><div class="stat-num">${fmtMoney(collected)}</div><div class="stat-note">${monthFees.filter(f=>f.status==='paid').length} payments</div></div>
-    <div class="stat-card"><div class="stat-label">Awaiting Verification</div><div class="stat-num">${fmtMoney(submittedAmt)}</div><div class="stat-note">${submitted.length} screenshot${submitted.length===1?'':'s'} to check</div></div>
-    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-num">${fmtMoney(pendingAmt)}</div><div class="stat-note">${monthFees.filter(f=>f.status==='pending').length} invoices</div></div>
-    <div class="stat-card"><div class="stat-label">Total students billed</div><div class="stat-num">${monthFees.length}</div><div class="stat-note">for ${monthLabel(feeFilterMonth)}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.collected')}</div><div class="stat-num">${fmtMoney(collected)}</div><div class="stat-note">${monthFees.filter(f=>f.status==='paid').length} ${t('c.payments')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.awaitingVerification')}</div><div class="stat-num">${fmtMoney(submittedAmt)}</div><div class="stat-note">${submitted.length} · ${t('c.screenshotsToCheck')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.pendingLabel')}</div><div class="stat-num">${fmtMoney(pendingAmt)}</div><div class="stat-note">${monthFees.filter(f=>f.status==='pending').length} ${t('c.invoicesWord')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.totalStudentsBilled')}</div><div class="stat-num">${monthFees.length}</div><div class="stat-note">${t('c.forWord')} ${monthLabel(feeFilterMonth)}</div></div>
   </div>
   <div class="searchbar">
     <input type="month" value="${feeFilterMonth}" onchange="feeFilterMonth=this.value; render();" style="max-width:180px;">
-    <button class="btn btn-ghost" onclick="openGenerateInvoicesModal()">Generate invoices…</button>
-    <button class="btn btn-accent" onclick="openFeeForm()">+ Record Payment</button>
+    <button class="btn btn-ghost" onclick="openGenerateInvoicesModal()">${t('c.generateInvoices')}</button>
+    <button class="btn btn-accent" onclick="openFeeForm()">${t('c.recordPayment')}</button>
   </div>
   <div class="panel">
     <div class="panel-body" style="padding:0;">
-      ${monthFees.length===0 ? emptyState('No invoices for this month', 'Click "Generate invoices…" to choose which students to bill.') : `
+      ${monthFees.length===0 ? emptyState(t('c.noInvoicesTitle'), t('c.noInvoicesDetail')) : `
       <table class="ledger">
-        <thead><tr><th>Student</th><th>Batch</th><th>Amount</th><th>Status</th><th>Screenshot</th><th>Paid On</th><th>Mode</th><th></th></tr></thead>
+        <thead><tr><th>${t('c.colStudent')}</th><th>${t('c.colBatch')}</th><th>${t('c.colAmount')}</th><th>${t('c.colStatus')}</th><th>${t('c.colScreenshot')}</th><th>${t('c.colPaidOn')}</th><th>${t('c.colMode')}</th><th></th></tr></thead>
         <tbody>
         ${monthFees.map(f=>{
           const s = DB.students.find(x=>x.id===f.studentId);
           const b = s ? DB.batches.find(x=>x.id===s.batchId) : null;
           let statusPill;
-          if(f.status==='paid') statusPill = '<span class="pill pill-green">Paid</span>';
-          else if(f.status==='submitted') statusPill = '<span class="pill pill-mustard">Awaiting Verification</span>';
-          else statusPill = '<span class="pill pill-red">Pending</span>';
+          if(f.status==='paid') statusPill = `<span class="pill pill-green">${t('c.paid')}</span>`;
+          else if(f.status==='submitted') statusPill = `<span class="pill pill-mustard">${t('c.awaitingVerification')}</span>`;
+          else statusPill = `<span class="pill pill-red">${t('c.pendingLabel')}</span>`;
           let actions = '';
           if(f.status==='submitted'){
-            actions = `<button class="btn btn-primary btn-sm" onclick="openVerifyModal('${f.id}')">Review</button>`;
+            actions = `<button class="btn btn-primary btn-sm" onclick="openVerifyModal('${f.id}')">${t('c.reviewBtn')}</button>`;
           } else if(f.status==='pending'){
-            actions = `<button class="btn btn-primary btn-sm" onclick="markFeePaid('${f.id}')">Mark Paid</button>`;
+            actions = `<button class="btn btn-primary btn-sm" onclick="markFeePaid('${f.id}')">${t('c.markPaidBtn')}</button>`;
           } else {
-            actions = `<button class="btn btn-ghost btn-sm" onclick="markFeePending('${f.id}')">Undo</button>`;
+            actions = `<button class="btn btn-ghost btn-sm" onclick="markFeePending('${f.id}')">${t('c.undoBtn')}</button>`;
           }
           return `<tr>
-            <td><strong>${s?esc(s.name):'Unknown'}</strong></td>
+            <td><strong>${s?esc(s.name):t('c.unknown')}</strong></td>
             <td>${b?esc(b.name):'—'}</td>
             <td class="mono">${fmtMoney(f.amount)}</td>
             <td>${statusPill}</td>
-            <td>${f.screenshot ? `<img src="${f.screenshot}" class="ss-thumb" onclick="openVerifyModal('${f.id}')" title="View screenshot">` : '—'}</td>
+            <td>${f.screenshot ? `<img src="${f.screenshot}" class="ss-thumb" onclick="openVerifyModal('${f.id}')" title="${t('c.viewScreenshot')}">` : '—'}</td>
             <td class="mono">${f.paidDate?fmtDate(f.paidDate):'—'}</td>
             <td class="mono">${esc(f.mode||'—')}</td>
             <td class="row-actions">
               ${actions}
-              <button class="btn btn-danger btn-sm" onclick="deleteFee('${f.id}')">Delete</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFee('${f.id}')">${t('c.delete')}</button>
             </td>
           </tr>`;
         }).join('')}
@@ -1126,16 +1509,16 @@ function renderFees(){
 function openVerifyModal(feeId){
   const f = DB.fees.find(x=>x.id===feeId);
   const s = DB.students.find(x=>x.id===f.studentId);
-  document.getElementById('modalTitle').textContent = 'Verify Payment — ' + (s?s.name:'') + ' · ' + monthLabel(f.month);
+  document.getElementById('modalTitle').textContent = t('c.verifyPaymentTitle') + (s?s.name:'') + ' · ' + monthLabel(f.month);
   document.getElementById('modalBody').innerHTML = `
     <div class="pay-modal-amount">${fmtMoney(f.amount)}</div>
-    ${f.screenshot ? `<img src="${f.screenshot}" class="verify-img">` : `<div class="hint">No screenshot uploaded yet.</div>`}
-    <div class="hint" style="text-align:center;">${f.submittedDate ? 'Submitted on '+fmtDate(f.submittedDate) : ''}</div>
+    ${f.screenshot ? `<img src="${f.screenshot}" class="verify-img">` : `<div class="hint">${t('c.noScreenshotYet')}</div>`}
+    <div class="hint" style="text-align:center;">${f.submittedDate ? t('c.submittedOnLbl')+fmtDate(f.submittedDate) : ''}</div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-    ${f.status==='submitted' ? `<button class="btn btn-danger" onclick="rejectFeeSubmission('${f.id}')">Reject</button>
-    <button class="btn btn-accent" onclick="confirmVerifiedPayment('${f.id}')">Confirm &amp; Mark Paid</button>` : ''}
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.close')}</button>
+    ${f.status==='submitted' ? `<button class="btn btn-danger" onclick="rejectFeeSubmission('${f.id}')">${t('c.rejectBtn')}</button>
+    <button class="btn btn-accent" onclick="confirmVerifiedPayment('${f.id}')">${t('c.confirmMarkPaid')}</button>` : ''}
   `;
   openModal();
 }
@@ -1155,13 +1538,13 @@ function rejectFeeSubmission(feeId){
 }
 function openGenerateInvoicesModal(){
   if(!DB.students.length){ showToast('Add students first'); return; }
-  document.getElementById('modalTitle').textContent = 'Generate Invoices — ' + monthLabel(feeFilterMonth);
+  document.getElementById('modalTitle').textContent = t('c.generateInvoicesTitle') + monthLabel(feeFilterMonth);
   const rows = DB.students.map(s=>{
     const b = s.batchId ? DB.batches.find(x=>x.id===s.batchId) : null;
     const amount = s.monthlyFee > 0 ? s.monthlyFee : (b ? b.fee : 0);
     const already = DB.fees.some(f => f.studentId===s.id && f.month===feeFilterMonth);
     const disabled = already || !amount;
-    const note = already ? 'Already invoiced' : (!amount ? 'No fee set — skip' : (b?esc(b.name):'No batch'));
+    const note = already ? t('c.alreadyInvoiced') : (!amount ? t('c.noFeeSetSkip') : (b?esc(b.name):t('c.noBatchWord')));
     return `<label class="pick-row${disabled?' disabled':''}">
       <input type="checkbox" class="invoicePick" value="${s.id}" data-amount="${amount}" ${disabled?'disabled':'checked'}>
       <div class="pick-name">${esc(s.name)}<div class="pick-sub">${note}${amount?' · '+fmtMoney(amount):''}</div></div>
@@ -1169,16 +1552,16 @@ function openGenerateInvoicesModal(){
   }).join('');
   document.getElementById('modalBody').innerHTML = `
     <div class="pick-header">
-      <div class="hint" style="margin:0;">Choose which students to bill for ${monthLabel(feeFilterMonth)}.</div>
+      <div class="hint" style="margin:0;">${t('c.chooseStudentsToBill')} ${monthLabel(feeFilterMonth)}.</div>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-soft);white-space:nowrap;">
-        <input type="checkbox" id="pickAll" checked onchange="toggleAllInvoicePicks(this)"> Select all
+        <input type="checkbox" id="pickAll" checked onchange="toggleAllInvoicePicks(this)"> ${t('c.selectAll')}
       </label>
     </div>
     <div class="pick-list">${rows}</div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-accent" onclick="generateSelectedInvoices()">Generate Selected</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-accent" onclick="generateSelectedInvoices()">${t('c.generateSelected')}</button>
   `;
   openModal();
 }
@@ -1203,18 +1586,18 @@ function generateSelectedInvoices(){
 }
 function openFeeForm(){
   const studentOptions = DB.students.map(s=>`<option value="${s.id}" data-fee="${s.monthlyFee||0}">${esc(s.name)} — #${esc(s.roll)}</option>`).join('');
-  document.getElementById('modalTitle').textContent = 'Record Payment';
+  document.getElementById('modalTitle').textContent = t('c.recordPaymentTitle');
   document.getElementById('modalBody').innerHTML = `
-    <div class="field"><label>Student</label><select id="f_fstudent" onchange="prefillAmountFromStudent(this)">${DB.students.length?studentOptions:'<option>No students yet</option>'}</select></div>
+    <div class="field"><label>${t('c.studentLabel')}</label><select id="f_fstudent" onchange="prefillAmountFromStudent(this)">${DB.students.length?studentOptions:`<option>${t('c.noStudentsOpt')}</option>`}</select></div>
     <div class="field-row">
-      <div class="field"><label>Month</label><input type="month" id="f_fmonth" value="${feeFilterMonth}"></div>
-      <div class="field"><label>Amount (₹)</label><input type="number" id="f_famount" placeholder="e.g. 1500"></div>
+      <div class="field"><label>${t('c.monthLabel2')}</label><input type="month" id="f_fmonth" value="${feeFilterMonth}"></div>
+      <div class="field"><label>${t('c.amountRs')}</label><input type="number" id="f_famount" placeholder="e.g. 1500"></div>
     </div>
-    <div class="field"><label>Payment Mode</label><select id="f_fmode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select></div>
+    <div class="field"><label>${t('c.paymentMode')}</label><select id="f_fmode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select></div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveFeePayment()">Save Payment</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-primary" onclick="saveFeePayment()">${t('c.savePayment')}</button>
   `;
   openModal();
   const sel = document.getElementById('f_fstudent');
@@ -1254,9 +1637,9 @@ function renderTimetable(batchFilter){
       slots = slots.sort((a,b)=> (a.time||'').localeCompare(b.time||''));
       return `<div class="tt-day">
         <div class="tt-day-head">${day}</div>
-        ${slots.length===0 ? '<div class="tt-empty">No classes</div>' :
+        ${slots.length===0 ? `<div class="tt-empty">${t('c.noClasses')}</div>` :
           slots.map(b => {
-            return `<div class="tt-slot"><div class="t">${esc(b.time||'Time TBD')}</div><div><strong>${esc(b.name)}</strong></div></div>`;
+            return `<div class="tt-slot"><div class="t">${esc(b.time||t('c.timeTBD'))}</div><div><strong>${esc(b.name)}</strong></div></div>`;
           }).join('')
         }
       </div>`;
@@ -1297,17 +1680,17 @@ function renderStudentDashboard(){
 
   return `
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-label">Your Batch</div><div class="stat-num" style="font-size:20px;">${b?esc(b.name):'Unassigned'}</div><div class="stat-note">${b?(b.days||[]).join(', ')+' · '+esc(b.time||''):'Contact your teacher'}</div></div>
-    <div class="stat-card"><div class="stat-label">Attendance</div><div class="stat-num">${stats.pct===null?'—':stats.pct+'%'}</div><div class="stat-note">${stats.present}/${stats.total} classes present</div></div>
-    <div class="stat-card"><div class="stat-label">Homework Due</div><div class="stat-num">${pendingHw.length}</div><div class="stat-note">not yet marked done</div></div>
-    <div class="stat-card"><div class="stat-label">Fees Due</div><div class="stat-num">${fmtMoney(dueAmt)}</div><div class="stat-note">${duePending.length} pending invoice${duePending.length===1?'':'s'}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.yourBatch')}</div><div class="stat-num" style="font-size:20px;">${b?esc(b.name):t('c.unassigned')}</div><div class="stat-note">${b?(b.days||[]).join(', ')+' · '+esc(b.time||''):t('c.contactTeacher')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.attendanceLabel')}</div><div class="stat-num">${stats.pct===null?'—':stats.pct+'%'}</div><div class="stat-note">${stats.present}/${stats.total} ${t('c.classesPresent')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.homeworkDue')}</div><div class="stat-num">${pendingHw.length}</div><div class="stat-note">${t('c.notYetMarkedDone')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.feesDue')}</div><div class="stat-num">${fmtMoney(dueAmt)}</div><div class="stat-note">${duePending.length} ${duePending.length===1?t('c.pendingInvoiceWord'):t('c.pendingInvoicesWordPl')}</div></div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Upcoming homework</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.upcomingHomework')}</div></div>
     <div class="panel-body">
-      ${pendingHw.length===0 ? emptyState('Nothing pending',"You're all caught up.") :
+      ${pendingHw.length===0 ? emptyState(t('c.nothingPending'),t('c.allCaughtUp')) :
         pendingHw.slice(0,4).map(h=>`<div class="hw-card" style="margin-bottom:8px;">
-          <div class="hw-top"><div><div class="hw-title" style="font-size:14.5px;">${esc(h.title)}</div><div class="hw-meta">Due ${fmtDate(h.dueDate)}</div></div></div>
+          <div class="hw-top"><div><div class="hw-title" style="font-size:14.5px;">${esc(h.title)}</div><div class="hw-meta">${t('c.dueLabel')} ${fmtDate(h.dueDate)}</div></div></div>
         </div>`).join('')
       }
     </div>
@@ -1316,7 +1699,7 @@ function renderStudentDashboard(){
 function renderStudentHomework(){
   const s = myStudent();
   const items = hwForStudent(s).sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
-  if(items.length===0) return emptyState('No homework yet',"Your teacher hasn't assigned anything yet.");
+  if(items.length===0) return emptyState(t('c.noHwYetTitle'),t('c.teacherNotAssigned'));
   return items.map(h=>{
     const key = h.id+'__'+s.id;
     const done = DB.homeworkStatus[key]==='done';
@@ -1325,10 +1708,10 @@ function renderStudentHomework(){
       <div class="hw-top">
         <div>
           <div class="hw-title">${esc(h.title)}</div>
-          <div class="hw-meta">${h.assignTo==='student'?'Just for you':'Whole batch'} · Due ${fmtDate(h.dueDate)} ${overdue?'<span class="pill pill-red" style="margin-left:6px;">Overdue</span>':''}</div>
+          <div class="hw-meta">${h.assignTo==='student'?t('c.justForYou'):t('c.wholeBatchWord')} · ${t('c.dueLabel')} ${fmtDate(h.dueDate)} ${overdue?`<span class="pill pill-red" style="margin-left:6px;">${t('c.overdue')}</span>`:''}</div>
         </div>
         <div class="hw-done-badge">
-          <span class="mono" style="font-size:11px;color:var(--text-soft);">${done?'Done':'Mark done'}</span>
+          <span class="mono" style="font-size:11px;color:var(--text-soft);">${done?t('c.doneStatus'):t('c.markDone')}</span>
           <div class="check-toggle ${done?'done':''}" onclick="toggleHomeworkDone('${h.id}')">${done?'✓':''}</div>
         </div>
       </div>
@@ -1350,18 +1733,18 @@ function renderStudentAttendance(){
   const stats = studentAttendanceStats(s.id);
   return `
   <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card"><div class="stat-label">Overall Attendance</div><div class="stat-num">${stats.pct===null?'—':stats.pct+'%'}</div></div>
-    <div class="stat-card"><div class="stat-label">Present</div><div class="stat-num">${stats.present}</div></div>
-    <div class="stat-card"><div class="stat-label">Absent</div><div class="stat-num">${stats.total-stats.present}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.overallAttendance')}</div><div class="stat-num">${stats.pct===null?'—':stats.pct+'%'}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.presentWord')}</div><div class="stat-num">${stats.present}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('c.absentWord')}</div><div class="stat-num">${stats.total-stats.present}</div></div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">History</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.history')}</div></div>
     <div class="panel-body" style="padding:0;">
-      ${stats.history.length===0 ? emptyState('No attendance recorded yet','Check back after your first class.') : `
+      ${stats.history.length===0 ? emptyState(t('c.noAttendanceRecorded'),t('c.checkBackAfterClass')) : `
       <table class="ledger">
-        <thead><tr><th>Date</th><th>Status</th></tr></thead>
+        <thead><tr><th>${t('c.colDate')}</th><th>${t('c.colStatus')}</th></tr></thead>
         <tbody>
-        ${stats.history.map(h=>`<tr><td class="mono">${fmtDate(h.date)}</td><td>${h.status==='P'?'<span class="pill pill-green">Present</span>':'<span class="pill pill-red">Absent</span>'}</td></tr>`).join('')}
+        ${stats.history.map(h=>`<tr><td class="mono">${fmtDate(h.date)}</td><td>${h.status==='P'?`<span class="pill pill-green">${t('c.presentWord')}</span>`:`<span class="pill pill-red">${t('c.absentWord')}</span>`}</td></tr>`).join('')}
         </tbody>
       </table>`}
     </div>
@@ -1371,22 +1754,22 @@ function renderStudentFees(){
   const s = myStudent();
   const myFees = [...DB.fees.filter(f=>f.studentId===s.id)].sort((a,b)=> b.month.localeCompare(a.month));
   return `
-  <div class="hint" style="margin-bottom:16px;">Parents can use this same login to check dues and pay fees on ${esc(s.name)}'s behalf — just share the username and password from the Profile page.</div>
-  ${myFees.length===0 ? emptyState('No invoices yet',"Your teacher hasn't generated any invoices for you yet.") :
+  <div class="hint" style="margin-bottom:16px;">${t('c.parentHint').replace('{name}', esc(s.name))}</div>
+  ${myFees.length===0 ? emptyState(t('c.noInvoicesYetTitle'),t('c.teacherNoInvoices')) :
     myFees.map(f => {
       let statusNote, pill, action;
       if(f.status==='paid'){
-        statusNote = 'Paid on '+fmtDate(f.paidDate)+' · '+esc(f.mode||'');
-        pill = '<span class="pill pill-green">Paid</span>';
+        statusNote = t('c.paidOnWord')+fmtDate(f.paidDate)+' · '+esc(f.mode||'');
+        pill = `<span class="pill pill-green">${t('c.paid')}</span>`;
         action = '';
       } else if(f.status==='submitted'){
-        statusNote = 'Screenshot submitted on '+fmtDate(f.submittedDate)+' · awaiting admin confirmation';
-        pill = '<span class="pill pill-mustard">Awaiting Verification</span>';
-        action = `<button class="btn btn-ghost btn-sm" onclick="openPayModal('${f.id}')">View / Resubmit</button>`;
+        statusNote = t('c.submittedOnWord')+fmtDate(f.submittedDate)+t('c.awaitingConfirmation');
+        pill = `<span class="pill pill-mustard">${t('c.awaitingVerification')}</span>`;
+        action = `<button class="btn btn-ghost btn-sm" onclick="openPayModal('${f.id}')">${t('c.viewResubmit')}</button>`;
       } else {
-        statusNote = 'Payment pending';
-        pill = '<span class="pill pill-red">Pending</span>';
-        action = `<button class="btn btn-accent btn-sm" onclick="openPayModal('${f.id}')">Pay Now</button>`;
+        statusNote = t('c.paymentPending');
+        pill = `<span class="pill pill-red">${t('c.pendingLabel')}</span>`;
+        action = `<button class="btn btn-accent btn-sm" onclick="openPayModal('${f.id}')">${t('c.payNow')}</button>`;
       }
       return `<div class="payline">
       <div>
@@ -1406,24 +1789,24 @@ let pendingScreenshotData = null;
 function openPayModal(feeId){
   const f = DB.fees.find(x=>x.id===feeId);
   pendingScreenshotData = f.screenshot || null;
-  document.getElementById('modalTitle').textContent = 'Pay Fee — ' + monthLabel(f.month);
+  document.getElementById('modalTitle').textContent = t('c.payFeeTitle') + monthLabel(f.month);
   document.getElementById('modalBody').innerHTML = `
     <div class="pay-modal-amount">${fmtMoney(f.amount)}</div>
     <div class="qr-wrap"><img src="${FEE_QR_IMAGE}" alt="PhonePe payment QR code"></div>
-    <div class="hint" style="text-align:center;margin-top:-4px;">Scan with any UPI app (PhonePe, Google Pay, Paytm) and pay the exact amount above.</div>
-    <label style="margin-top:14px;">Upload payment screenshot</label>
+    <div class="hint" style="text-align:center;margin-top:-4px;">${t('c.scanQrHint')}</div>
+    <label style="margin-top:14px;">${t('c.uploadScreenshot')}</label>
     <div class="upload-box" id="ssUploadBox" onclick="document.getElementById('f_screenshot').click()">
       <div id="ssUploadInner">
         ${f.screenshot ? `<img src="${f.screenshot}" class="upload-preview">` : ''}
-        <div style="font-size:12.5px;color:var(--text-soft);">${f.screenshot ? 'Tap to replace screenshot' : 'Tap to select a screenshot from your gallery'}</div>
+        <div style="font-size:12.5px;color:var(--text-soft);">${f.screenshot ? t('c.tapReplaceScreenshot') : t('c.tapSelectScreenshot')}</div>
       </div>
       <input type="file" id="f_screenshot" accept="image/*" onchange="handleScreenshotSelect(event)">
     </div>
-    <div class="hint" style="margin-top:10px;">After you submit, this invoice moves to "Awaiting Verification" — the admin will check your screenshot and confirm it before it shows as fully Paid.</div>
+    <div class="hint" style="margin-top:10px;">${t('c.afterSubmitHint')}</div>
   `;
   document.getElementById('modalFoot').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-accent" onclick="submitFeeForVerification('${feeId}')">I've Paid — Submit for Verification</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-accent" onclick="submitFeeForVerification('${feeId}')">${t('c.submitForVerification')}</button>
   `;
   openModal();
 }
@@ -1434,7 +1817,7 @@ async function handleScreenshotSelect(evt){
     pendingScreenshotData = await compressImageFile(file);
     document.getElementById('ssUploadInner').innerHTML = `
       <img src="${pendingScreenshotData}" class="upload-preview">
-      <div style="font-size:12.5px;color:var(--text-soft);">Tap to replace screenshot</div>`;
+      <div style="font-size:12.5px;color:var(--text-soft);">${t('c.tapReplaceScreenshot')}</div>`;
   }catch(e){ showToast('Could not read that image, try another file'); }
 }
 function submitFeeForVerification(feeId){
@@ -1453,30 +1836,30 @@ function renderStudentProfile(){
   const b = DB.batches.find(x=>x.id===s.batchId);
   return `
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Your details</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.yourDetails')}</div></div>
     <div class="panel-body">
       <table class="ledger">
         <tbody>
-          <tr><td style="width:180px;color:var(--text-soft);">Name</td><td><strong>${esc(s.name)}</strong></td></tr>
-          <tr><td style="color:var(--text-soft);">Roll Number</td><td class="mono">${esc(s.roll)}</td></tr>
-          <tr><td style="color:var(--text-soft);">Std / Class</td><td class="mono">${esc(s.std||'—')}</td></tr>
-          <tr><td style="color:var(--text-soft);">Batch</td><td>${b?esc(b.name):'Unassigned'}</td></tr>
-          <tr><td style="color:var(--text-soft);">Guardian</td><td>${esc(s.guardian||'—')}</td></tr>
-          <tr><td style="color:var(--text-soft);">Phone</td><td class="mono">${esc(s.phone||'—')}</td></tr>
-          <tr><td style="color:var(--text-soft);">Admitted On</td><td class="mono">${fmtDate(s.admissionDate)}</td></tr>
-          <tr><td style="color:var(--text-soft);">Username</td><td class="mono">${esc(s.username)}</td></tr>
+          <tr><td style="width:180px;color:var(--text-soft);">${t('c.nameWord')}</td><td><strong>${esc(s.name)}</strong></td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.rollNumberLbl')}</td><td class="mono">${esc(s.roll)}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.stdClassLbl')}</td><td class="mono">${esc(s.std||'—')}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.batchLbl')}</td><td>${b?esc(b.name):t('c.unassigned')}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.guardianLbl')}</td><td>${esc(s.guardian||'—')}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.phoneLbl')}</td><td class="mono">${esc(s.phone||'—')}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.admittedOnLbl')}</td><td class="mono">${fmtDate(s.admissionDate)}</td></tr>
+          <tr><td style="color:var(--text-soft);">${t('c.usernameLbl')}</td><td class="mono">${esc(s.username)}</td></tr>
         </tbody>
       </table>
     </div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Change password</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.changePassword')}</div></div>
     <div class="panel-body">
       <div class="field-row">
-        <div class="field"><label>New Password</label><input id="f_newpass" type="password" placeholder="At least 6 characters"></div>
-        <div class="field"><label>Confirm Password</label><input id="f_newpass2" type="password" placeholder="Repeat password"></div>
+        <div class="field"><label>${t('c.newPassword')}</label><input id="f_newpass" type="password" placeholder="${t('c.atLeast6')}"></div>
+        <div class="field"><label>${t('c.confirmPassword')}</label><input id="f_newpass2" type="password" placeholder="${t('c.repeatPassword')}"></div>
       </div>
-      <button class="btn btn-primary" onclick="changeMyPassword()">Update Password</button>
+      <button class="btn btn-primary" onclick="changeMyPassword()">${t('c.updatePassword')}</button>
     </div>
   </div>`;
 }
@@ -1500,22 +1883,22 @@ async function changeMyPassword(){
 function renderAdminSettings(){
   return `
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Institute</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.institute')}</div></div>
     <div class="panel-body">
-      <div class="field"><label>Institute Name</label><input id="f_instituteName" value="${esc(DB.settings.instituteName||'')}"></div>
-      <button class="btn btn-primary" onclick="saveInstituteName()">Save Name</button>
+      <div class="field"><label>${t('c.instituteName')}</label><input id="f_instituteName" value="${esc(DB.settings.instituteName||'')}"></div>
+      <button class="btn btn-primary" onclick="saveInstituteName()">${t('c.saveName')}</button>
     </div>
   </div>
   <div class="panel">
-    <div class="panel-head"><div class="panel-title">Admin Login</div></div>
+    <div class="panel-head"><div class="panel-title">${t('c.adminLogin')}</div></div>
     <div class="panel-body">
-      <div class="field"><label>Username</label><input id="f_adminUser" value="${esc(DB.settings.adminUsername||'')}"></div>
+      <div class="field"><label>${t('c.usernameLbl')}</label><input id="f_adminUser" value="${esc(DB.settings.adminUsername||'')}"></div>
       <div class="field-row">
-        <div class="field"><label>New Password</label><input id="f_adminPass1" type="password" placeholder="Leave blank to keep current"></div>
-        <div class="field"><label>Confirm New Password</label><input id="f_adminPass2" type="password" placeholder="Repeat new password"></div>
+        <div class="field"><label>${t('c.newPasswordLbl')}</label><input id="f_adminPass1" type="password" placeholder="${t('c.leaveBlank')}"></div>
+        <div class="field"><label>${t('c.confirmNewPassword')}</label><input id="f_adminPass2" type="password" placeholder="${t('c.repeatNewPassword')}"></div>
       </div>
-      <div class="field"><label>Current Password</label><input id="f_adminPassCurrent" type="password" placeholder="Required to confirm changes"></div>
-      <button class="btn btn-primary" onclick="saveAdminCredentials()">Save Login Details</button>
+      <div class="field"><label>${t('c.currentPassword')}</label><input id="f_adminPassCurrent" type="password" placeholder="${t('c.requiredToConfirm')}"></div>
+      <button class="btn btn-primary" onclick="saveAdminCredentials()">${t('c.saveLoginDetails')}</button>
     </div>
   </div>`;
 }
@@ -1578,6 +1961,7 @@ Object.assign(window, {
   openVerifyModal, confirmVerifiedPayment, rejectFeeSubmission, changeMyPassword,
   renderAdminSettings, saveInstituteName, saveAdminCredentials,
   openModal, closeModal, render,
+  setLang, applyLanguage,
 });
 Object.defineProperties(window, {
   studentSearch: { get: () => studentSearch, set: v => { studentSearch = v; } },
@@ -1591,6 +1975,7 @@ Object.defineProperties(window, {
    ============================================================ */
 // Data now lives behind login (the API requires a token), so there's
 // nothing to load until someone signs in — see enterApp().
+applyLanguage();
 </script>
 </body>
 </html>
