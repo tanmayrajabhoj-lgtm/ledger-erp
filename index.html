@@ -104,6 +104,8 @@
   .btn-accent{background:var(--mustard); color:#2A2110;} .btn-accent:hover{background:var(--mustard-dark);}
   .btn-ghost{background:transparent; color:var(--text); border:1px solid var(--rule);} .btn-ghost:hover{background:var(--paper-2);}
   .btn-danger{background:transparent; color:var(--red); border:1px solid #E0C3C3;} .btn-danger:hover{background:var(--red-bg);}
+  .btn-whatsapp{background:#25D366; color:#fff; border:1px solid #1DA851;} .btn-whatsapp:hover{background:#1DA851;}
+  .btn-whatsapp:disabled{background:#cfd8d2; color:#8a9a92; border-color:#cfd8d2; cursor:not-allowed;}
   .btn-block{ width:100%; justify-content:center; }
   .btn-sm{padding:5px 10px; font-size:12px; border-radius:6px;}
   input, select, textarea{ font-family:'Inter',sans-serif; font-size:13.5px; padding:9px 11px; border-radius:7px; border:1px solid var(--rule); background:var(--card); color:var(--text); outline:none; width:100%; }
@@ -458,6 +460,9 @@ const I18N = {
       newPasswordLbl:'New Password', leaveBlank:'Leave blank to keep current', confirmNewPassword:'Confirm New Password', repeatNewPassword:'Repeat new password',
       saveLoginDetails:'Save Login Details',
       totalWord:'total', recentlyAdmitted:'Recently admitted', noStudentsYetTitle:'No students yet', addFirstStudentTab:'Add your first student from the Students tab.',
+      sendRemindersTitle:'Send Fee Reminders', reminderModalHint:'Tap "Remind" to open WhatsApp with a pre-filled message to that student — it sends from your own WhatsApp number, you just hit send.',
+      remindBtn:'Remind', noPhoneOnFile:'No phone number on file',
+      reminderMsg:'Hi {name}, this is a reminder from {institute} that your fee of {amount} for {month} is pending. Kindly make the payment at your earliest convenience. Thank you!',
       pendingFeeInvoices:'Pending fee invoices', allClearTitle:'All clear', noPendingInvoicesMonth:'No pending invoices for this month.',
       colStudent:'Student', colAmount:'Amount',
       totalStudentsLbl:'Total Students', batchesLbl:'Batches', morningEvening:'Morning &amp; Evening', collectedLbl:'Collected —',
@@ -564,6 +569,9 @@ const I18N = {
       newPasswordLbl:'नया पासवर्ड', leaveBlank:'मौजूदा रखने के लिए खाली छोड़ें', confirmNewPassword:'नए पासवर्ड की पुष्टि करें', repeatNewPassword:'नया पासवर्ड दोबारा लिखें',
       saveLoginDetails:'लॉगिन विवरण सहेजें',
       totalWord:'कुल', recentlyAdmitted:'हाल ही में जोड़े गए', noStudentsYetTitle:'अभी कोई विद्यार्थी नहीं', addFirstStudentTab:'विद्यार्थी टैब से अपना पहला विद्यार्थी जोड़ें।',
+      sendRemindersTitle:'फीस रिमाइंडर भेजें', reminderModalHint:'उस विद्यार्थी को पहले से लिखा हुआ संदेश देने के लिए WhatsApp खोलने हेतु "रिमाइंड करें" पर टैप करें — यह आपके अपने WhatsApp नंबर से भेजा जाएगा, आपको बस भेजें दबाना है।',
+      remindBtn:'रिमाइंड करें', noPhoneOnFile:'फ़ोन नंबर दर्ज नहीं है',
+      reminderMsg:'नमस्ते {name}, यह {institute} की ओर से एक रिमाइंडर है कि {month} की आपकी {amount} फीस अभी बकाया है। कृपया जल्द से जल्द भुगतान करें। धन्यवाद!',
       pendingFeeInvoices:'लंबित फीस चालान', allClearTitle:'सब ठीक है', noPendingInvoicesMonth:'इस महीने कोई लंबित चालान नहीं।',
       colStudent:'विद्यार्थी', colAmount:'राशि',
       totalStudentsLbl:'कुल विद्यार्थी', batchesLbl:'बैच', morningEvening:'सुबह और शाम', collectedLbl:'जमा हुआ —',
@@ -670,6 +678,9 @@ const I18N = {
       newPasswordLbl:'नवीन पासवर्ड', leaveBlank:'सध्याचा ठेवण्यासाठी रिकामे सोडा', confirmNewPassword:'नवीन पासवर्डची पुष्टी करा', repeatNewPassword:'नवीन पासवर्ड पुन्हा टाका',
       saveLoginDetails:'लॉगिन तपशील जतन करा',
       totalWord:'एकूण', recentlyAdmitted:'नुकतेच दाखल झालेले', noStudentsYetTitle:'अजून विद्यार्थी नाहीत', addFirstStudentTab:'विद्यार्थी टॅबमधून तुमचा पहिला विद्यार्थी जोडा.',
+      sendRemindersTitle:'फी रिमाइंडर पाठवा', reminderModalHint:'त्या विद्यार्थ्याला आधीच लिहिलेला संदेश देऊन WhatsApp उघडण्यासाठी "आठवण करा" वर टॅप करा — हे तुमच्या स्वतःच्या WhatsApp नंबरवरून पाठवले जाईल, तुम्हाला फक्त पाठवा दाबायचे आहे.',
+      remindBtn:'आठवण करा', noPhoneOnFile:'फोन नंबर नोंदवलेला नाही',
+      reminderMsg:'नमस्कार {name}, ही {institute} कडून आठवण आहे की {month} साठी तुमची {amount} फी प्रलंबित आहे. कृपया लवकरात लवकर पेमेंट करा. धन्यवाद!',
       pendingFeeInvoices:'प्रलंबित फी इनव्हॉइस', allClearTitle:'सर्व काही ठीक', noPendingInvoicesMonth:'या महिन्यासाठी प्रलंबित इनव्हॉइस नाहीत.',
       colStudent:'विद्यार्थी', colAmount:'रक्कम',
       totalStudentsLbl:'एकूण विद्यार्थी', batchesLbl:'बॅच', morningEvening:'सकाळ आणि संध्याकाळ', collectedLbl:'जमा झाले —',
@@ -1448,6 +1459,54 @@ function deleteHomework(id){
    ADMIN: FEES
    ============================================================ */
 let feeFilterMonth = monthKey(todayISO());
+/* ============================================================
+   WHATSAPP FEE REMINDERS
+   Uses wa.me "click to chat" links, which open WhatsApp Web/App
+   under the admin's own logged-in (personal) number — there's no
+   automated sending, the admin still taps Send themselves.
+   ============================================================ */
+function normalizePhoneForWhatsapp(phone){
+  if(!phone) return null;
+  let digits = String(phone).replace(/\D/g,'');
+  if(!digits) return null;
+  if(digits.length===10) digits = '91'+digits;
+  else if(digits.length===11 && digits.startsWith('0')) digits = '91'+digits.slice(1);
+  return digits;
+}
+function buildFeeReminderMessage(f, s){
+  const inst = (DB.settings && DB.settings.instituteName) || 'Shree Classes';
+  return t('c.reminderMsg')
+    .replace('{name}', s.name)
+    .replace('{institute}', inst)
+    .replace('{amount}', fmtMoney(f.amount))
+    .replace('{month}', monthLabel(f.month));
+}
+function sendFeeReminder(feeId){
+  const f = DB.fees.find(x=>x.id===feeId);
+  const s = f ? DB.students.find(x=>x.id===f.studentId) : null;
+  if(!s){ showToast('Student not found'); return; }
+  const phone = normalizePhoneForWhatsapp(s.phone);
+  if(!phone){ showToast(t('c.noPhoneOnFile')); return; }
+  const msg = buildFeeReminderMessage(f, s);
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function openReminderModal(fees){
+  document.getElementById('modalTitle').textContent = t('c.sendRemindersTitle');
+  const rows = fees.map(f=>{
+    const s = DB.students.find(x=>x.id===f.studentId);
+    const phone = s ? normalizePhoneForWhatsapp(s.phone) : null;
+    return `<div class="pick-row">
+      <div class="pick-name">${s?esc(s.name):t('c.unknown')}<div class="pick-sub">${fmtMoney(f.amount)} · ${monthLabel(f.month)}${phone?'':' · '+t('c.noPhoneOnFile')}</div></div>
+      <button class="btn btn-sm ${phone?'btn-whatsapp':'btn-ghost'}" ${phone?'':'disabled'} onclick="sendFeeReminder('${f.id}')">${t('c.remindBtn')}</button>
+    </div>`;
+  }).join('');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="hint" style="margin-top:0;">${t('c.reminderModalHint')}</div>
+    <div class="pick-list">${rows}</div>
+  `;
+  document.getElementById('modalFoot').innerHTML = `<button class="btn btn-primary" onclick="closeModal()">${t('c.doneBtn')}</button>`;
+  openModal();
+}
 function renderFees(){
   const monthFees = DB.fees.filter(f=>f.month===feeFilterMonth);
   const collected = monthFees.filter(f=>f.status==='paid').reduce((s,f)=>s+Number(f.amount),0);
@@ -1486,6 +1545,10 @@ function renderFees(){
             actions = `<button class="btn btn-primary btn-sm" onclick="markFeePaid('${f.id}')">${t('c.markPaidBtn')}</button>`;
           } else {
             actions = `<button class="btn btn-ghost btn-sm" onclick="markFeePending('${f.id}')">${t('c.undoBtn')}</button>`;
+          }
+          if(f.status!=='paid'){
+            const phone = s ? normalizePhoneForWhatsapp(s.phone) : null;
+            actions += `<button class="btn btn-whatsapp btn-sm" ${phone?'':'disabled'} onclick="sendFeeReminder('${f.id}')" title="${phone?t('c.remindBtn'):t('c.noPhoneOnFile')}">${t('c.remindBtn')}</button>`;
           }
           return `<tr>
             <td><strong>${s?esc(s.name):t('c.unknown')}</strong></td>
@@ -1571,18 +1634,25 @@ function toggleAllInvoicePicks(master){
 function generateSelectedInvoices(){
   const checked = [...document.querySelectorAll('.invoicePick:checked')];
   if(!checked.length){ showToast('Select at least one student'); return; }
-  let created = 0;
+  let createdFees = [];
   checked.forEach(cb => {
     const studentId = cb.value;
     const amount = Number(cb.dataset.amount);
     const exists = DB.fees.some(f => f.studentId===studentId && f.month===feeFilterMonth);
     if(exists || !amount) return;
-    DB.fees.push({id: uid('fee'), studentId, month: feeFilterMonth, amount, status:'pending', paidDate:null, mode:null});
-    created++;
+    const fee = {id: uid('fee'), studentId, month: feeFilterMonth, amount, status:'pending', paidDate:null, mode:null};
+    DB.fees.push(fee);
+    createdFees.push(fee);
   });
   saveKey('fees');
-  closeModal(); render();
-  showToast(created ? `Generated ${created} invoice(s)` : 'No new invoices generated');
+  render();
+  if(createdFees.length){
+    showToast(`Generated ${createdFees.length} invoice(s)`);
+    openReminderModal(createdFees);
+  } else {
+    closeModal();
+    showToast('No new invoices generated');
+  }
 }
 function openFeeForm(){
   const studentOptions = DB.students.map(s=>`<option value="${s.id}" data-fee="${s.monthlyFee||0}">${esc(s.name)} — #${esc(s.roll)}</option>`).join('');
