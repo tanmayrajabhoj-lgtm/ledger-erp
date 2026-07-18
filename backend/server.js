@@ -29,7 +29,7 @@ const pool = new Pool({
 
 // Keys that are allowed to move through the generic kv_store endpoints,
 // and who's allowed to write each one.
-const ADMIN_ONLY_KEYS = ['batches', 'attendance', 'homework', 'students', 'settings'];
+const ADMIN_ONLY_KEYS = ['batches', 'attendance', 'homework', 'students', 'settings', 'announcements'];
 const SHARED_WRITE_KEYS = ['fees', 'homeworkStatus']; // students can write here too
 
 /* ============================================================
@@ -61,6 +61,7 @@ async function ensureSchema() {
     ['fees', []],
     ['homework', []],
     ['homeworkStatus', {}],
+    ['announcements', []],
   ];
   for (const [key, value] of defaults) {
     await pool.query(
@@ -162,7 +163,7 @@ app.post('/api/login', async (req, res) => {
    ============================================================ */
 app.get('/api/data', auth(), async (req, res) => {
   try {
-    const keys = ['settings', 'students', 'batches', 'attendance', 'fees', 'homework', 'homeworkStatus'];
+    const keys = ['settings', 'students', 'batches', 'attendance', 'fees', 'homework', 'homeworkStatus', 'announcements'];
     const out = {};
     for (const k of keys) out[k] = await getKV(k);
     if (req.user.role === 'admin') {

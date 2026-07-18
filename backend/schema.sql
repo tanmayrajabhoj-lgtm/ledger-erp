@@ -41,5 +41,6 @@ INSERT INTO kv_store (key, value) VALUES
   ('attendance', '{}'),
   ('fees', '[]'),
   ('homework', '[]'),
-  ('homeworkStatus', '{}')
+  ('homeworkStatus', '{}'),
+  ('announcements', '[]')
 ON CONFLICT (key) DO NOTHING;
