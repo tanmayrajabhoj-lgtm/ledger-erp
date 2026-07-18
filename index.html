@@ -495,6 +495,8 @@ const I18N = {
       remindBtn:'Remind', noPhoneOnFile:'No phone number on file',
       reminderMsg:'Hi {name}, this is a reminder from {institute} that your fee of {amount} for {month} is pending. Kindly make the payment at your earliest convenience. Thank you!',
       sendCredsWhatsapp:'📲 Send Login via WhatsApp',
+      sendCredsTitle:'Send Login Details', sendCredsHint:'Send {name}\'s login to their parent on WhatsApp. Enter the password they currently use — this doesn\'t change or reset it.',
+      enterCurrentPassword:'Enter the password to send', sendCredsPassHint:'Default is "student123" unless you or the student changed it. If you\'re not sure, use "Reset PW" instead to set a known password first.',
       sendToLabel:'Send To', allBatchesWord:'All Batches',
       absenceAlertMsg:'Hi {name}, this is {institute}. We noticed {count} consecutive absences. Please let us know if everything is okay, or share the reason for the absence. Thank you!',
       pendingFeeInvoices:'Pending fee invoices', allClearTitle:'All clear', noPendingInvoicesMonth:'No pending invoices for this month.',
@@ -632,6 +634,8 @@ const I18N = {
       remindBtn:'रिमाइंड करें', noPhoneOnFile:'फ़ोन नंबर दर्ज नहीं है',
       reminderMsg:'नमस्ते {name}, यह {institute} की ओर से एक रिमाइंडर है कि {month} की आपकी {amount} फीस अभी बकाया है। कृपया जल्द से जल्द भुगतान करें। धन्यवाद!',
       sendCredsWhatsapp:'📲 WhatsApp से लॉगिन भेजें',
+      sendCredsTitle:'लॉगिन विवरण भेजें', sendCredsHint:'{name} का लॉगिन उनके अभिभावक को WhatsApp पर भेजें। वह पासवर्ड डालें जो वे अभी उपयोग करते हैं — इससे पासवर्ड बदलता या रीसेट नहीं होता।',
+      enterCurrentPassword:'भेजने के लिए पासवर्ड डालें', sendCredsPassHint:'डिफ़ॉल्ट "student123" है, जब तक आपने या विद्यार्थी ने इसे बदला न हो। अगर पक्का नहीं है, तो पहले "पासवर्ड रीसेट करें" का उपयोग करें।',
       sendToLabel:'भेजें', allBatchesWord:'सभी बैच',
       absenceAlertMsg:'नमस्ते {name}, यह {institute} है। हमने देखा कि लगातार {count} दिनों से अनुपस्थिति है। कृपया बताएं कि सब ठीक है या अनुपस्थिति का कारण साझा करें। धन्यवाद!',
       pendingFeeInvoices:'लंबित फीस चालान', allClearTitle:'सब ठीक है', noPendingInvoicesMonth:'इस महीने कोई लंबित चालान नहीं।',
@@ -769,6 +773,8 @@ const I18N = {
       remindBtn:'आठवण करा', noPhoneOnFile:'फोन नंबर नोंदवलेला नाही',
       reminderMsg:'नमस्कार {name}, ही {institute} कडून आठवण आहे की {month} साठी तुमची {amount} फी प्रलंबित आहे. कृपया लवकरात लवकर पेमेंट करा. धन्यवाद!',
       sendCredsWhatsapp:'📲 WhatsApp वर लॉगिन पाठवा',
+      sendCredsTitle:'लॉगिन तपशील पाठवा', sendCredsHint:'{name} चा लॉगिन त्यांच्या पालकांना WhatsApp वर पाठवा. ते सध्या वापरत असलेला पासवर्ड टाका — यामुळे पासवर्ड बदलत किंवा रीसेट होत नाही.',
+      enterCurrentPassword:'पाठवण्यासाठी पासवर्ड टाका', sendCredsPassHint:'डीफॉल्ट "student123" आहे, जोपर्यंत तुम्ही किंवा विद्यार्थ्याने तो बदललेला नाही. खात्री नसल्यास आधी "पासवर्ड रीसेट करा" वापरा.',
       sendToLabel:'पाठवा', allBatchesWord:'सर्व बॅच',
       absenceAlertMsg:'नमस्कार {name}, ही {institute} आहे. आम्ही पाहिले की सलग {count} दिवस गैरहजेरी आहे. कृपया सर्व ठीक आहे का ते कळवा किंवा गैरहजेरीचे कारण सांगा. धन्यवाद!',
       pendingFeeInvoices:'प्रलंबित फी इनव्हॉइस', allClearTitle:'सर्व काही ठीक', noPendingInvoicesMonth:'या महिन्यासाठी प्रलंबित इनव्हॉइस नाहीत.',
@@ -1182,6 +1188,7 @@ function renderStudentsListBody(){
             <td class="mono">${fmtDate(s.admissionDate)}</td>
             <td class="row-actions">
               <button class="btn btn-ghost btn-sm" onclick="openStudentForm('${s.id}')">${t('c.edit')}</button>
+              <button class="btn btn-whatsapp btn-sm" ${normalizePhoneForWhatsapp(s.phone)?'':'disabled'} onclick="openSendCredsModal('${s.id}')" title="${normalizePhoneForWhatsapp(s.phone)?t('c.sendCredsWhatsapp'):t('c.noPhoneOnFile')}">📲</button>
               <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword('${s.id}')">${t('c.resetPw')}</button>
               <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">${t('c.delete')}</button>
             </td>
@@ -1300,6 +1307,29 @@ function sendCredentialsWhatsApp(phone, username, password){
   if(!p){ showToast(t('c.noPhoneOnFile')); return; }
   const msg = buildCredentialsWhatsAppMessage(username, password);
   window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function openSendCredsModal(id){
+  const s = DB.students.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('modalTitle').textContent = t('c.sendCredsTitle');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="hint" style="margin-top:0;">${t('c.sendCredsHint').replace('{name}', esc(s.name))}</div>
+    <div class="field"><label>${t('c.usernameLabel')}</label><input value="${esc(s.username)}" readonly onclick="this.select()"></div>
+    <div class="field"><label>${t('c.passwordLabel')}</label><input id="f_sendcreds_pass" value="student123" placeholder="${t('c.enterCurrentPassword')}"></div>
+    <div class="hint">${t('c.sendCredsPassHint')}</div>
+  `;
+  document.getElementById('modalFoot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">${t('c.cancel')}</button>
+    <button class="btn btn-whatsapp" onclick="confirmSendCredsWhatsApp('${s.id}')">${t('c.sendCredsWhatsapp')}</button>
+  `;
+  openModal();
+}
+function confirmSendCredsWhatsApp(id){
+  const s = DB.students.find(x=>x.id===id);
+  const pass = document.getElementById('f_sendcreds_pass').value.trim();
+  if(!pass){ showToast(t('c.enterCurrentPassword')); return; }
+  sendCredentialsWhatsApp(s.phone, s.username, pass);
+  closeModal();
 }
 function showCredentialsModal(s, password){
   const phone = normalizePhoneForWhatsapp(s.phone);
