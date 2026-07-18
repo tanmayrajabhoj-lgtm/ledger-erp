@@ -29,7 +29,7 @@ const pool = new Pool({
 
 // Keys that are allowed to move through the generic kv_store endpoints,
 // and who's allowed to write each one.
-const ADMIN_ONLY_KEYS = ['batches', 'attendance', 'homework', 'students', 'settings', 'announcements'];
+const ADMIN_ONLY_KEYS = ['batches', 'attendance', 'homework', 'students', 'settings', 'announcements', 'testPhotos'];
 const SHARED_WRITE_KEYS = ['fees', 'homeworkStatus']; // students can write here too
 
 /* ============================================================
@@ -54,7 +54,7 @@ async function ensureSchema() {
   `);
 
   const defaults = [
-    ['settings', { instituteName: 'Ledger Tuition Center' }],
+    ['settings', { instituteName: 'Ledger Tuition Center', testPhotoRetentionDays: 0 }],
     ['students', []],
     ['batches', []],
     ['attendance', {}],
@@ -62,6 +62,7 @@ async function ensureSchema() {
     ['homework', []],
     ['homeworkStatus', {}],
     ['announcements', []],
+    ['testPhotos', []],
   ];
   for (const [key, value] of defaults) {
     await pool.query(
@@ -163,7 +164,7 @@ app.post('/api/login', async (req, res) => {
    ============================================================ */
 app.get('/api/data', auth(), async (req, res) => {
   try {
-    const keys = ['settings', 'students', 'batches', 'attendance', 'fees', 'homework', 'homeworkStatus', 'announcements'];
+    const keys = ['settings', 'students', 'batches', 'attendance', 'fees', 'homework', 'homeworkStatus', 'announcements', 'testPhotos'];
     const out = {};
     for (const k of keys) out[k] = await getKV(k);
     if (req.user.role === 'admin') {
@@ -199,11 +200,16 @@ app.put('/api/data/:key', auth(), async (req, res) => {
     return res.status(400).json({ error: 'Unknown key' });
   }
   if (key === 'settings' && isAdmin) {
-    // Only instituteName flows through the generic endpoint; admin
-    // credentials are changed via /api/admin/credentials so the
-    // password is always hashed server-side, never round-tripped as text.
+    // Only instituteName and testPhotoRetentionDays flow through the
+    // generic endpoint; admin credentials are changed via
+    // /api/admin/credentials so the password is always hashed
+    // server-side, never round-tripped as text.
     const current = (await getKV('settings')) || {};
-    await setKV('settings', { instituteName: value.instituteName ?? current.instituteName });
+    const days = Number(value.testPhotoRetentionDays);
+    await setKV('settings', {
+      instituteName: value.instituteName ?? current.instituteName,
+      testPhotoRetentionDays: Number.isFinite(days) && days >= 0 ? days : (current.testPhotoRetentionDays || 0),
+    });
     return res.json({ ok: true });
   }
   // students array must never carry a plaintext password field
@@ -312,6 +318,38 @@ app.post('/api/admin/credentials', auth('admin'), async (req, res) => {
     }
     await pool.query('UPDATE admin_auth SET username = $1, password_hash = $2 WHERE id = 1', [username, hash]);
     res.json({ ok: true, username });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/* ============================================================
+   SCHEDULED CLEANUP (called by an external cron ping, since
+   Render's free tier has no built-in scheduler). Deletes test
+   photos older than settings.testPhotoRetentionDays. Safe to call
+   as often as you like — it's a no-op once everything is current.
+   ============================================================ */
+app.get('/api/cron/purge-test-photos', async (req, res) => {
+  try {
+    if (process.env.CRON_SECRET && req.query.key !== process.env.CRON_SECRET) {
+      return res.status(401).json({ error: 'Invalid or missing key' });
+    }
+    const settings = (await getKV('settings')) || {};
+    const days = Number(settings.testPhotoRetentionDays) || 0;
+    if (days <= 0) {
+      return res.json({ ok: true, removed: 0, skipped: 'auto-delete is off (testPhotoRetentionDays = 0)' });
+    }
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+    const testPhotos = (await getKV('testPhotos')) || [];
+    const kept = testPhotos.filter(tp => tp.date >= cutoffStr);
+    const removed = testPhotos.length - kept.length;
+    if (removed > 0) await setKV('testPhotos', kept);
+
+    res.json({ ok: true, removed, remaining: kept.length, retentionDays: days });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });

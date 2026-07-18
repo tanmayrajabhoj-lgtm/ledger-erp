@@ -35,12 +35,13 @@ CREATE TABLE IF NOT EXISTS student_auth (
 
 -- Seed empty top-level sections so loadDB() has consistent shapes to read.
 INSERT INTO kv_store (key, value) VALUES
-  ('settings', '{"instituteName":"Ledger Tuition Center"}'),
+  ('settings', '{"instituteName":"Ledger Tuition Center","testPhotoRetentionDays":0}'),
   ('students', '[]'),
   ('batches', '[]'),
   ('attendance', '{}'),
   ('fees', '[]'),
   ('homework', '[]'),
   ('homeworkStatus', '{}'),
-  ('announcements', '[]')
+  ('announcements', '[]'),
+  ('testPhotos', '[]')
 ON CONFLICT (key) DO NOTHING;
